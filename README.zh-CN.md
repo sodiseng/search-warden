@@ -30,6 +30,7 @@
 - [反向代理与 HTTPS](#反向代理与-https)
 - [数据、备份与升级](#数据备份与升级)
 - [监控](#监控)
+- [预编译二进制](#预编译二进制)
 - [从源码构建](#从源码构建)
 - [安全说明](#安全说明)
 - [许可证](#许可证)
@@ -303,19 +304,105 @@ location / {
 - `GET /healthz` 返回 `{"status":"ok"}`。某个配置文件有无法生效的修改时返回 `degraded`，状态码仍是 200。
 - 设置 `WARDEN_METRICS_TOKEN` 后，`GET /metrics` 提供 Prometheus 指标，用 `Authorization: Bearer <token>` 读取。内容包括按服务区分的请求数、耗时、花费、重试和错误，各状态的 key 数量，每个 key 的剩余额度，以及出口是否可用。
 
-## 从源码构建
+## 预编译二进制
 
-需要 Go 1.27。
+不想用 Docker 时，可以从[发布页](https://github.com/sodiseng/search-warden/releases)下载网关。它是一个独立的可执行文件，没有任何运行时依赖。
+
+| 系统 | x86-64（amd64） | ARM64 |
+|---|---|---|
+| Linux | `search-warden_linux_amd64.tar.gz` | `search-warden_linux_arm64.tar.gz` |
+| macOS | `search-warden_darwin_amd64.tar.gz`（Intel） | `search-warden_darwin_arm64.tar.gz`（Apple 芯片） |
+| Windows | `search-warden_windows_amd64.zip` | `search-warden_windows_arm64.zip` |
+
+每个压缩包解开后是一个目录，里面有 `warden`（Windows 上是 `warden.exe`）、许可证文件和 README。同一个发布里的 `SHA256SUMS.txt` 列出了校验值。
+
+Linux 和 macOS：
 
 ```bash
-cd gateway
-go vet ./... && go test ./...
-go build -o bin/warden ./cmd/warden
+# x86-64 的 Linux；其他平台请换成对应的文件名
+curl -LO https://github.com/sodiseng/search-warden/releases/latest/download/search-warden_linux_amd64.tar.gz
+tar -xzf search-warden_linux_amd64.tar.gz
+cd search-warden_linux_amd64
 
+WARDEN_ADMIN_PASSWORD='choose-a-password' ./warden serve
+```
+
+Windows（PowerShell），解压 zip 之后：
+
+```powershell
+cd search-warden_windows_amd64
+$env:WARDEN_ADMIN_PASSWORD = 'choose-a-password'
+.\warden.exe serve
+```
+
+然后打开 `http://127.0.0.1:18683/admin/`。需要知道的几点：
+
+- 网关把文件放在 `./data` 里，相对于启动它时所在的目录。要放到别处，设置 `WARDEN_DATA_DIR`。
+- 它监听所有网卡的 18683 端口。只接受本机连接时，设置 `WARDEN_LISTEN=127.0.0.1:18683`。
+- 其余设置与 Docker 方式相同，都是那些[环境变量](#环境变量)。`WARDEN_ADMIN_PASSWORD` 只在首次启动时需要。
+- 这些二进制没有签名。macOS 可能拒绝运行用浏览器下载的文件，用 `xattr -d com.apple.quarantine ./warden` 去掉隔离标记即可。
+
+## 从源码构建
+
+需要 Git 和 Go 1.27 或更新的版本，除此之外什么都不用装：构建不需要 C 编译器，面板的资源已经嵌在二进制里，没有前端构建步骤。
+
+**1. 获取源码**
+
+```bash
+git clone https://github.com/sodiseng/search-warden.git
+cd search-warden/gateway
+```
+
+**2. 运行检查**（可选）
+
+```bash
+go vet ./... && go test ./...
+```
+
+PostgreSQL 的测试默认跳过，除非用 `WARDEN_TEST_PG_DSN` 指定一个测试数据库。
+
+**3. 编译**
+
+```bash
+go build -o bin/warden ./cmd/warden        # Windows 上用 -o bin/warden.exe
+```
+
+第一次编译会下载 Go 模块。这样编出来的二进制，版本号显示为 `dev`。
+
+**4. 按发布版的方式编译**（可选）
+
+写入版本号、去掉调试信息，并生成静态链接的二进制：
+
+```bash
+PKG=github.com/sodiseng/search-warden/gateway/internal/buildinfo
+CGO_ENABLED=0 go build -trimpath \
+  -ldflags "-s -w -X $PKG.Version=$(git describe --tags --always) -X $PKG.Commit=$(git rev-parse HEAD)" \
+  -o bin/warden ./cmd/warden
+
+./bin/warden version
+```
+
+要为其他平台编译，设置 `GOOS`（`linux`、`darwin` 或 `windows`）和 `GOARCH`（`amd64` 或 `arm64`）：
+
+```bash
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bin/warden-linux-arm64 ./cmd/warden
+```
+
+**5. 运行**
+
+```bash
 WARDEN_ADMIN_PASSWORD='choose-a-password' WARDEN_DATA_DIR=./data ./bin/warden serve
 ```
 
 `warden healthcheck` 检查本机的 `/healthz`；`warden version` 输出版本号。
+
+**Docker 镜像。** 在仓库根目录执行：
+
+```bash
+docker build -t search-warden .
+# 同时构建两个架构：
+docker buildx build --platform linux/amd64,linux/arm64 -t search-warden .
+```
 
 ## 安全说明
 

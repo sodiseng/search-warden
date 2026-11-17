@@ -30,6 +30,7 @@ send each key through its own proxy, and watch everything from an admin panel.
 - [Reverse proxy and HTTPS](#reverse-proxy-and-https)
 - [Data, backup and upgrade](#data-backup-and-upgrade)
 - [Monitoring](#monitoring)
+- [Prebuilt binaries](#prebuilt-binaries)
 - [Build from source](#build-from-source)
 - [Security notes](#security-notes)
 - [License](#license)
@@ -301,19 +302,105 @@ The files are created from templates on first start (their comments are currentl
 - `GET /healthz` returns `{"status":"ok"}`. It reports `degraded`, still with status 200, when a configuration file has an edit that could not be applied.
 - `GET /metrics` serves Prometheus metrics once `WARDEN_METRICS_TOKEN` is set, read with `Authorization: Bearer <token>`. It covers requests, latency, spend, retries and errors per provider, the number of keys in each state, remaining quota per key, and egress health.
 
-## Build from source
+## Prebuilt binaries
 
-Requires Go 1.27.
+To run without Docker, download the gateway from the [releases page](https://github.com/sodiseng/search-warden/releases). It is a single self-contained binary with no runtime dependencies.
+
+| System | x86-64 (amd64) | ARM64 |
+|---|---|---|
+| Linux | `search-warden_linux_amd64.tar.gz` | `search-warden_linux_arm64.tar.gz` |
+| macOS | `search-warden_darwin_amd64.tar.gz` (Intel) | `search-warden_darwin_arm64.tar.gz` (Apple silicon) |
+| Windows | `search-warden_windows_amd64.zip` | `search-warden_windows_arm64.zip` |
+
+Each archive unpacks to a folder holding `warden` (`warden.exe` on Windows), the license files and this README. `SHA256SUMS.txt` in the same release lists the checksums.
+
+Linux and macOS:
 
 ```bash
-cd gateway
-go vet ./... && go test ./...
-go build -o bin/warden ./cmd/warden
+# Linux on x86-64; change the file name for another platform
+curl -LO https://github.com/sodiseng/search-warden/releases/latest/download/search-warden_linux_amd64.tar.gz
+tar -xzf search-warden_linux_amd64.tar.gz
+cd search-warden_linux_amd64
 
+WARDEN_ADMIN_PASSWORD='choose-a-password' ./warden serve
+```
+
+Windows (PowerShell), after unpacking the zip:
+
+```powershell
+cd search-warden_windows_amd64
+$env:WARDEN_ADMIN_PASSWORD = 'choose-a-password'
+.\warden.exe serve
+```
+
+Then open `http://127.0.0.1:18683/admin/`. Good to know:
+
+- The gateway keeps its files in `./data`, relative to the directory you start it from. Set `WARDEN_DATA_DIR` to put them elsewhere.
+- It listens on port 18683 on all interfaces. Set `WARDEN_LISTEN=127.0.0.1:18683` to accept local connections only.
+- All other settings are the same [environment variables](#environment-variables) as with Docker. `WARDEN_ADMIN_PASSWORD` is only needed for the first start.
+- The binaries are not signed. macOS may refuse to run one that was downloaded with a browser; remove the quarantine flag with `xattr -d com.apple.quarantine ./warden`.
+
+## Build from source
+
+You need Git and Go 1.27 or newer. Nothing else: the build uses no C compiler, and the panel's assets are embedded in the binary, so there is no front-end build step.
+
+**1. Get the source**
+
+```bash
+git clone https://github.com/sodiseng/search-warden.git
+cd search-warden/gateway
+```
+
+**2. Run the checks** (optional)
+
+```bash
+go vet ./... && go test ./...
+```
+
+The PostgreSQL tests are skipped unless `WARDEN_TEST_PG_DSN` points at a test database.
+
+**3. Build**
+
+```bash
+go build -o bin/warden ./cmd/warden        # on Windows: -o bin/warden.exe
+```
+
+The first build downloads the Go modules. This binary reports its version as `dev`.
+
+**4. Build the way the releases are built** (optional)
+
+This stamps the version, strips debug information and produces a static binary:
+
+```bash
+PKG=github.com/sodiseng/search-warden/gateway/internal/buildinfo
+CGO_ENABLED=0 go build -trimpath \
+  -ldflags "-s -w -X $PKG.Version=$(git describe --tags --always) -X $PKG.Commit=$(git rev-parse HEAD)" \
+  -o bin/warden ./cmd/warden
+
+./bin/warden version
+```
+
+To build for another platform, set `GOOS` (`linux`, `darwin` or `windows`) and `GOARCH` (`amd64` or `arm64`):
+
+```bash
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bin/warden-linux-arm64 ./cmd/warden
+```
+
+**5. Run**
+
+```bash
 WARDEN_ADMIN_PASSWORD='choose-a-password' WARDEN_DATA_DIR=./data ./bin/warden serve
 ```
 
 `warden healthcheck` probes the local `/healthz`; `warden version` prints the version.
+
+**Docker image.** From the repository root:
+
+```bash
+docker build -t search-warden .
+# both architectures:
+docker buildx build --platform linux/amd64,linux/arm64 -t search-warden .
+```
 
 ## Security notes
 

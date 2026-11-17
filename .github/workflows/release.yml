@@ -1,0 +1,84 @@
+name: release
+
+# Builds the warden binary for six platforms and attaches the archives to the
+# GitHub release of a tag. Runs when a v* tag is pushed; "Run workflow" can
+# publish the binaries of a tag that already exists.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and publish, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write   # create the release and upload its assets
+
+jobs:
+  binaries:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - name: Check the tag name
+        run: |
+          case "$TAG" in
+            v[0-9]*) echo "releasing $TAG" ;;
+            *) echo "not a version tag: $TAG"; exit 1 ;;
+          esac
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.4'   # same toolchain as ci.yml and the Dockerfile
+          check-latest: true
+          cache-dependency-path: gateway/go.*
+      - name: Test
+        working-directory: gateway
+        run: go vet ./... && go test -count=1 ./...
+      - name: Build archives
+        run: |
+          set -euo pipefail
+          commit=$(git rev-parse HEAD)
+          date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          pkg=github.com/sodiseng/search-warden/gateway/internal/buildinfo
+          mkdir -p build dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}
+            arch=${target#*/}
+            name=search-warden_${os}_${arch}
+            bin=warden
+            if [ "$os" = windows ]; then bin=warden.exe; fi
+            mkdir -p "build/$name"
+            (cd gateway && CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
+              -ldflags "-s -w -X $pkg.Version=$TAG -X $pkg.Commit=$commit -X $pkg.Date=$date" \
+              -o "../build/$name/$bin" ./cmd/warden)
+            cp LICENSE NOTICE README.md README.zh-CN.md "build/$name/"
+            if [ "$os" = windows ]; then
+              (cd build && zip -qr "../dist/$name.zip" "$name")
+            else
+              tar -C build -czf "dist/$name.tar.gz" "$name"
+            fi
+          done
+          (cd dist && sha256sum *.tar.gz *.zip > SHA256SUMS.txt)
+          ls -l dist
+          # The binary built for this runner must report the tag it was built from.
+          reported=$(build/search-warden_linux_amd64/warden version)
+          echo "$reported"
+          case "$reported" in
+            *"$TAG"*) ;;
+            *) echo "version mismatch"; exit 1 ;;
+          esac
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --verify-tag --title "Search Warden ${TAG#v}" --generate-notes
+          fi
