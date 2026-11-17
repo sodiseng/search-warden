@@ -73,22 +73,6 @@ jobs:
         run: |
           echo "version=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
           echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          build-args: |
-            SRC_DIR=${{ env.SRC_DIR }}
-            VERSION=${{ steps.v.outputs.version }}
-            COMMIT=${{ github.sha }}
-            DATE=${{ steps.v.outputs.date }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/search-warden:${{ github.ref_type == 'tag' && github.ref_name || 'edge' }}
-            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}/search-warden:latest', github.repository_owner) || '' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Smoke test (amd64)
         if: github.event_name == 'pull_request' || github.ref_type == 'branch' || github.ref_type == 'tag'
         run: |
@@ -126,3 +110,20 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18683/admin/login)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18683/)" = 403
           docker compose down
+      # Publish only after the smoke tests above have passed.
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          build-args: |
+            SRC_DIR=${{ env.SRC_DIR }}
+            VERSION=${{ steps.v.outputs.version }}
+            COMMIT=${{ github.sha }}
+            DATE=${{ steps.v.outputs.date }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/search-warden:${{ github.ref_type == 'tag' && github.ref_name || 'edge' }}
+            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}/search-warden:latest', github.repository_owner) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
