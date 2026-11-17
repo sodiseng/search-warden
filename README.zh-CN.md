@@ -1,6 +1,6 @@
 <div align="center">
 
-# search-warden
+# Search Warden
 
 **自托管的 Tavily + Exa API key 网关**
 
@@ -50,7 +50,7 @@
 ## 工作方式
 
 ```text
- Agent 和 SDK                       search-warden                         上游
+ Agent 和 SDK                       Search Warden                         上游
 ┌──────────────────┐  网关令牌  ┌──────────────────────────┐  你的 key   ┌────────────────┐
 │ MCP 客户端       │──────────▶│ 鉴权与限额               │────────────▶│ api.tavily.com │
 │ Tavily / Exa SDK │           │ key 池、重试、额度       │  按 key 的  │ api.exa.ai     │
@@ -331,4 +331,4 @@ WARDEN_ADMIN_PASSWORD='choose-a-password' WARDEN_DATA_DIR=./data ./bin/warden se
 
 ## 免责声明
 
-search-warden 用于管理你合法持有的 API key。请确认你的用法符合 Tavily 和 Exa 的服务条款。本项目不鼓励批量注册账号，也不能保证账号不会被封禁。
+Search Warden 用于管理你合法持有的 API key。请确认你的用法符合 Tavily 和 Exa 的服务条款。本项目不鼓励批量注册账号，也不能保证账号不会被封禁。

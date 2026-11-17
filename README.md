@@ -1,6 +1,6 @@
 <div align="center">
 
-# search-warden
+# Search Warden
 
 **A self-hosted gateway for your Tavily and Exa API keys.**
 
@@ -50,7 +50,7 @@ send each key through its own proxy, and watch everything from an admin panel.
 ## How it works
 
 ```text
- Agents and SDKs                    search-warden                         Upstream
+ Agents and SDKs                    Search Warden                         Upstream
 ┌──────────────────┐  gateway  ┌──────────────────────────┐  your keys  ┌────────────────┐
 │ MCP clients      │──token───▶│ auth and limits          │────────────▶│ api.tavily.com │
 │ Tavily / Exa SDK │           │ key pool, retry, quota   │  per-key    │ api.exa.ai     │
@@ -329,4 +329,4 @@ WARDEN_ADMIN_PASSWORD='choose-a-password' WARDEN_DATA_DIR=./data ./bin/warden se
 
 ## Disclaimer
 
-search-warden is for managing API keys that you hold legitimately. Make sure your use complies with the Tavily and Exa terms of service. The project does not encourage registering accounts in bulk and cannot guarantee that accounts will not be suspended.
+Search Warden is for managing API keys that you hold legitimately. Make sure your use complies with the Tavily and Exa terms of service. The project does not encourage registering accounts in bulk and cannot guarantee that accounts will not be suspended.
