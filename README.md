@@ -134,7 +134,7 @@ There are two layers:
 |---|---|---|
 | `WARDEN_ADMIN_PASSWORD` | *(none, required once)* | Password of the panel user `admin`, at least 12 characters. Read only while `config.yaml` has no admin password yet; stored as an argon2id hash. |
 | `WARDEN_DB` | `sqlite:///data/db` | `sqlite://<directory>` or `postgres://user:pass@host:5432/db`. |
-| `WARDEN_ADMIN_LISTEN` | `shared` | `shared` serves the panel on the gateway port. `:18684` gives it a separate port. |
+| `WARDEN_ADMIN_LISTEN` | `shared` | `shared` serves the panel on the gateway port, so one port is all there is. A separate panel port is **off by default**; set this to `:18684` to turn it on. |
 | `WARDEN_ADMIN_BASE_PATH` | `/admin/` | Path the panel is mounted at. Must not be `/` while the panel shares the gateway port. |
 | `WARDEN_PUBLIC_URL` | *(empty)* | Public address of the gateway. Used only in the client configuration examples the panel shows. |
 | `WARDEN_ADMIN_PUBLIC_URL` | *(empty)* | Public address of the panel. Logins and changes are accepted only from this origin. |
@@ -152,7 +152,7 @@ Compose-only variables, used by `docker-compose.yml` and not read by the gateway
 | `WARDEN_IMAGE`, `WARDEN_VERSION` | `ghcr.io/sodiseng/search-warden`, `latest` | Image name and tag. |
 | `WARDEN_UID`, `WARDEN_GID` | `65532` | User the container runs as; owner of the files in `./data`. |
 | `WARDEN_GATEWAY_BIND`, `WARDEN_GATEWAY_PORT` | `0.0.0.0`, `18683` | Host address and port of the gateway. |
-| `WARDEN_ADMIN_BIND`, `WARDEN_ADMIN_PORT` | `127.0.0.1`, `18684` | Host address and port of a separate panel port. |
+| `WARDEN_ADMIN_BIND`, `WARDEN_ADMIN_PORT` | `127.0.0.1`, `18684` | Host address and port of the separate panel port. **Off by default**: they do nothing until `WARDEN_ADMIN_LISTEN=:18684` is set and the second port mapping in `docker-compose.yml` is uncommented. |
 | `PG_PASSWORD` | `change-me` | Password of the bundled PostgreSQL. |
 
 ## Connecting clients

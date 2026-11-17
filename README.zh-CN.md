@@ -136,7 +136,7 @@ CI 在每次推送到 `main` 时发布 `ghcr.io/sodiseng/search-warden:edge`，�
 |---|---|---|
 | `WARDEN_ADMIN_PASSWORD` | *（无，首次必填）* | 面板用户 `admin` 的密码，至少 12 个字符。只在 `config.yaml` 里还没有管理员密码时读取，保存为 argon2id 哈希。 |
 | `WARDEN_DB` | `sqlite:///data/db` | `sqlite://<目录>` 或 `postgres://user:pass@host:5432/db`。 |
-| `WARDEN_ADMIN_LISTEN` | `shared` | `shared` 表示面板与网关共用端口；`:18684` 表示面板使用独立端口。 |
+| `WARDEN_ADMIN_LISTEN` | `shared` | `shared` 表示面板与网关共用端口，整个服务只有一个端口。面板的独立端口**默认不开启**；设为 `:18684` 才会启用。 |
 | `WARDEN_ADMIN_BASE_PATH` | `/admin/` | 面板挂载的路径。面板与网关共用端口时不能是 `/`。 |
 | `WARDEN_PUBLIC_URL` | *（空）* | 网关的对外地址。只用于面板里展示的客户端配置示例。 |
 | `WARDEN_ADMIN_PUBLIC_URL` | *（空）* | 面板的对外地址。只接受来自这个来源的登录和修改。 |
@@ -154,7 +154,7 @@ CI 在每次推送到 `main` 时发布 `ghcr.io/sodiseng/search-warden:edge`，�
 | `WARDEN_IMAGE`、`WARDEN_VERSION` | `ghcr.io/sodiseng/search-warden`、`latest` | 镜像名和标签。 |
 | `WARDEN_UID`、`WARDEN_GID` | `65532` | 容器的运行用户，也是 `./data` 里文件的属主。 |
 | `WARDEN_GATEWAY_BIND`、`WARDEN_GATEWAY_PORT` | `0.0.0.0`、`18683` | 网关在宿主机上的地址和端口。 |
-| `WARDEN_ADMIN_BIND`、`WARDEN_ADMIN_PORT` | `127.0.0.1`、`18684` | 面板独立端口在宿主机上的地址和端口。 |
+| `WARDEN_ADMIN_BIND`、`WARDEN_ADMIN_PORT` | `127.0.0.1`、`18684` | 面板独立端口在宿主机上的地址和端口。**默认不开启**：只有设置了 `WARDEN_ADMIN_LISTEN=:18684`，并取消 `docker-compose.yml` 里第二条端口映射的注释后才起作用。 |
 | `PG_PASSWORD` | `change-me` | 自带 PostgreSQL 的密码。 |
 
 ## 接入客户端

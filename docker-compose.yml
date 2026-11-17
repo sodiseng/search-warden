@@ -37,8 +37,8 @@ services:
       # Behind a reverse proxy on the same host, set WARDEN_GATEWAY_BIND=127.0.0.1
       # so the port is not reachable from outside.
       - "${WARDEN_GATEWAY_BIND:-0.0.0.0}:${WARDEN_GATEWAY_PORT:-18683}:18683"
-      # [optional] A separate port for the admin panel. Set WARDEN_ADMIN_LISTEN=:18684
-      # in .env and remove the "# " below.
+      # [optional, off by default] A separate port for the admin panel. To turn it
+      # on, set WARDEN_ADMIN_LISTEN=:18684 in .env and remove the "# " below.
       # - "${WARDEN_ADMIN_BIND:-127.0.0.1}:${WARDEN_ADMIN_PORT:-18684}:18684"
 
     environment:
@@ -57,8 +57,9 @@ services:
       WARDEN_DB: ${WARDEN_DB:-sqlite:///data/db}
 
       # ---- [optional] Admin panel --------------------------------------------------
-      # "shared" puts the panel on the gateway port under WARDEN_ADMIN_BASE_PATH.
-      # ":18684" gives it its own port (also publish that port above).
+      # "shared" (the default) puts the panel on the gateway port under
+      # WARDEN_ADMIN_BASE_PATH: one port serves everything. A separate panel port
+      # is off by default; ":18684" turns it on (also publish that port above).
       WARDEN_ADMIN_LISTEN: ${WARDEN_ADMIN_LISTEN:-shared}
       # Where the panel is mounted. It must not be "/" while WARDEN_ADMIN_LISTEN=shared.
       WARDEN_ADMIN_BASE_PATH: ${WARDEN_ADMIN_BASE_PATH:-/admin/}
