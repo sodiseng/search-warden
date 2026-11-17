@@ -1,0 +1,46 @@
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead">{{if zh}}这里的设置保存在 <code>config.yaml</code>，保存后立即生效，并保留文件里的注释。管理员密码和两步验证在"安全"页修改；其余配置可以在"文件"页直接编辑。{{else}}These settings live in <code>config.yaml</code>; a save applies at once and keeps the file's comments. The admin password and two-step verification are on the Security page; everything else can be edited on the Files page.{{end}}</p>
+</div>
+<div class="cards">
+{{range .Groups}}
+<section class="card" id="{{.ID}}">
+  <form method="post" action="{{$.Base}}settings/{{.ID}}">
+    {{template "csrf" $.CSRF}}
+    <div class="card-head">
+      <h2>{{tr .Title}}</h2>
+      <button type="submit" class="small">{{icon "check"}}{{T "保存" "Save"}}</button>
+    </div>
+    <div class="card-body form">
+      {{if .Help.ZH}}<div class="alert warn">{{icon "triangle-alert"}}<div>{{tr .Help}}</div></div>{{end}}
+      {{if eq .ID "logs"}}{{with $.Data.Logs}}
+      <p class="hint">{{if .At.IsZero}}{{T "日志清理任务启动后约 1 分钟首次运行，之后每小时一次。" "The log clean-up first runs about a minute after start, then hourly."}}{{else}}{{if zh}}日志库现在约 {{mb .SizeBytes}} / 上限 {{mb .MaxBytes}}，共 {{num .Rows}} 条{{if not .Oldest.IsZero}}，最早一条在 {{dt .Oldest}}{{end}}。上次清理 {{ago .At}}：删除超期日志 {{num .AgeDeleted}} 条{{if .SizeDeleted}}，因超过容量上限删除最旧的 {{num .SizeDeleted}} 条{{end}}。{{else}}The log database is about {{mb .SizeBytes}} of {{mb .MaxBytes}}, {{num .Rows}} rows{{if not .Oldest.IsZero}}, the oldest from {{dt .Oldest}}{{end}}. Last clean-up {{ago .At}}: {{num .AgeDeleted}} expired rows deleted{{if .SizeDeleted}}, and the oldest {{num .SizeDeleted}} to get back under the size limit{{end}}.{{end}}{{if .Err}} <span class="err">{{T "清理出错：" "Clean-up failed: "}}{{.Err}}</span>{{end}}{{end}}</p>
+      {{end}}{{end}}
+      <div class="fields auto">
+      {{range .Views}}
+        {{if eq .Kind 2}}
+        <div class="field"><span class="field-label">{{tr .Label}}</span>
+          <label class="choice"><input type="checkbox" role="switch" name="{{.Name}}"{{if .On}} checked{{end}}>{{T "开启" "On"}}</label>
+          {{if .Help.ZH}}<small>{{tr .Help}}</small>{{end}}
+        </div>
+        {{else if eq .Kind 4}}
+        <label class="field"><span class="field-label">{{tr .Label}}</span>
+          <select name="{{.Name}}">{{$v := .Value}}{{range .Options}}<option value="{{.}}"{{if eq . $v}} selected{{end}}>{{.}}</option>{{end}}</select>
+          {{if .Help.ZH}}<small>{{tr .Help}}</small>{{end}}
+        </label>
+        {{else}}
+        <label class="field"><span class="field-label">{{tr .Label}}</span>
+          <input type="{{if or (eq .Kind 0) (eq .Kind 1)}}number{{else}}text{{end}}" name="{{.Name}}" value="{{.Value}}"{{if eq .Kind 1}} step="any"{{end}}>
+          {{if .Help.ZH}}<small>{{tr .Help}}</small>{{end}}
+        </label>
+        {{end}}
+      {{end}}
+      </div>
+    </div>
+  </form>
+</section>
+{{end}}
+</div>
+{{end}}
+{{end}}

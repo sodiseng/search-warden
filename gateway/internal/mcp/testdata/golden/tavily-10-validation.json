@@ -1,0 +1,753 @@
+{
+ "source": "https://mcp.tavily.com/mcp/",
+ "serverInfo": {
+  "name": "tavily-mcp",
+  "version": "4.1.5"
+ },
+ "recorded": "2026-11-10",
+ "note": "Answers of the official remote server to invalid and borderline tool arguments. 'error' is the JSON-RPC error it returned; 'accepted' means the call passed its validation (api_error: the API then refused it).",
+ "cases": [
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "bogus_param": 1
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nbogus_param\n  Unexpected keyword argument [type=unexpected_keyword_argument, input_value=1, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/unexpected_keyword_argument"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "search_depth": ""
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nsearch_depth\n  Input should be 'basic', 'advanced', 'fast' or 'ultra-fast' [type=literal_error, input_value='', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "search_depth": "bogus"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nsearch_depth\n  Input should be 'basic', 'advanced', 'fast' or 'ultra-fast' [type=literal_error, input_value='bogus', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": "abc"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nmax_results\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='abc', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_parsing"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": 1.5
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nmax_results\n  Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=1.5, input_type=float]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_from_float"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": [
+     1
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nmax_results\n  Input should be a valid integer [type=int_type, input_value=[1], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": {
+     "a": 1
+    }
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nmax_results\n  Input should be a valid integer [type=int_type, input_value={'a': 1}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": 12345
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nquery\n  Input should be a valid string [type=string_type, input_value=12345, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": true
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nquery\n  Input should be a valid string [type=string_type, input_value=True, input_type=bool]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": [
+     "a",
+     "b"
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nquery\n  Input should be a valid string [type=string_type, input_value=['a', 'b'], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nquery\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_domains": "example.com"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_domains\n  Input should be a valid list [type=list_type, input_value='example.com', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_domains": [
+     "a.com",
+     5
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_domains.1\n  Input should be a valid string [type=string_type, input_value=5, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_domains": {
+     "a": 1
+    }
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_domains\n  Input should be a valid list [type=list_type, input_value={'a': 1}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_images": "maybe"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_images\n  Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='maybe', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/bool_parsing"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_images": [
+     true
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_images\n  Input should be a valid boolean [type=bool_type, input_value=[True], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/bool_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_images": 2
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_images\n  Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value=2, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/bool_parsing"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "include_images": 0.5
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ninclude_images\n  Input should be a valid boolean [type=bool_type, input_value=0.5, input_type=float]\n    For further information visit https://errors.pydantic.dev/2.14/v/bool_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "country": 5
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ncountry\n  Input should be a valid string [type=string_type, input_value=5, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "max_results": 1,
+    "topic": "sports"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 2 validation errors for call[tavily_search]\nquery\n  Missing required argument [type=missing_argument, input_value={'max_results': 1, 'topic': 'sports'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing_argument\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='sports', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "topic": "sports",
+    "zzz": 1,
+    "max_results": "x",
+    "aaa": "y"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 5 validation errors for call[tavily_search]\nquery\n  Missing required argument [type=missing_argument, input_value={'topic': 'sports', 'zzz'...sults': 'x', 'aaa': 'y'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing_argument\nmax_results\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='x', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_parsing\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='sports', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error\nzzz\n  Unexpected keyword argument [type=unexpected_keyword_argument, input_value=1, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/unexpected_keyword_argument\naaa\n  Unexpected keyword argument [type=unexpected_keyword_argument, input_value='y', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/unexpected_keyword_argument"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {},
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nquery\n  Missing required argument [type=missing_argument, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing_argument"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "max_results": 1,
+    "include_domains": [
+     "aaaaaaaaaaaaaaaa.com",
+     "bbbbbbbbbbbbbbbbbbbb.com",
+     "cccccccccccccccc.com"
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nquery\n  Missing required argument [type=missing_argument, input_value={'max_results': 1, 'inclu...'cccccccccccccccc.com']}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing_argument"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "topic": "a very long topic value that goes on and on and on and on and on"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='a very long topic value ...on and on and on and on', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "topic": "it's"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value=\"it's\", input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "topic": "say \"hi\""
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='say \"hi\"', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "topic": "it's \"both\""
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='it\\'s \"both\"', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "topic": "新闻"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='新闻', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "topic": "line\nbreak\ttab\\slash"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\ntopic\n  Input should be 'general' or 'news' [type=literal_error, input_value='line\\nbreak\\ttab\\\\slash', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": 12345678901234567890123
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": 1000.0
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "q",
+    "max_results": "1.5"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_search]\nmax_results\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='1.5', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_parsing"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {},
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\nurls\n  Missing required argument [type=missing_argument, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing_argument"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": "https://example.com"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\nurls\n  Input should be a valid list [type=list_type, input_value='https://example.com', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": [
+     "https://example.com"
+    ],
+    "extract_depth": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\nextract_depth\n  Input should be 'basic' or 'advanced' [type=literal_error, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": [
+     "https://example.com"
+    ],
+    "include_images": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\ninclude_images\n  Input should be a valid boolean [type=bool_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/bool_type"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": [
+     "https://example.com"
+    ],
+    "query": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\nquery\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": [
+     "https://example.com"
+    ],
+    "format": "html"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\nformat\n  Input should be 'markdown' or 'text' [type=literal_error, input_value='html', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_extract]\nurls\n  Input should be a valid list [type=list_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "limit": 0
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_map]\nlimit\n  Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "limit": "5x"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_map]\nlimit\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='5x', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_parsing"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "limit": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_map]\nlimit\n  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_type"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "select_paths": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_map]\nselect_paths\n  Input should be a valid list [type=list_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "instructions": null
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_map]\ninstructions\n  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]\n    For further information visit https://errors.pydantic.dev/2.14/v/string_type"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "allow_external": "perhaps"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_map]\nallow_external\n  Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='perhaps', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/bool_parsing"
+   }
+  },
+  {
+   "tool": "tavily_crawl",
+   "arguments": {
+    "url": "https://example.com",
+    "chunks_per_source": 9
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_crawl]\nchunks_per_source\n  Input should be less than or equal to 5 [type=less_than_equal, input_value=9, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/less_than_equal"
+   }
+  },
+  {
+   "tool": "tavily_crawl",
+   "arguments": {
+    "url": "https://example.com",
+    "chunks_per_source": 0
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_crawl]\nchunks_per_source\n  Input should be greater than or equal to 1 [type=greater_than_equal, input_value=0, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal"
+   }
+  },
+  {
+   "tool": "tavily_crawl",
+   "arguments": {
+    "url": "https://example.com",
+    "max_depth": -1,
+    "max_breadth": 1.5
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 2 validation errors for call[tavily_crawl]\nmax_depth\n  Input should be greater than or equal to 1 [type=greater_than_equal, input_value=-1, input_type=int]\n    For further information visit https://errors.pydantic.dev/2.14/v/greater_than_equal\nmax_breadth\n  Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value=1.5, input_type=float]\n    For further information visit https://errors.pydantic.dev/2.14/v/int_from_float"
+   }
+  },
+  {
+   "tool": "tavily_research",
+   "arguments": {
+    "input": "x",
+    "model": "ultra"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_research]\nmodel\n  Input should be 'mini', 'pro' or 'auto' [type=literal_error, input_value='ultra', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_research",
+   "arguments": {
+    "model": "mini"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_research]\ninput\n  Missing required argument [type=missing_argument, input_value={'model': 'mini'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing_argument"
+   }
+  },
+  {
+   "tool": "tavily_research",
+   "arguments": {
+    "input": "x",
+    "files": "report.txt"
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_research]\nfiles\n  Input should be a valid list [type=list_type, input_value='report.txt', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/list_type"
+   }
+  },
+  {
+   "tool": "tavily_research",
+   "arguments": {
+    "input": "x",
+    "files": [
+     {
+      "name": "a.txt"
+     }
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_research]\nfiles.0.data\n  Field required [type=missing, input_value={'name': 'a.txt'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing"
+   }
+  },
+  {
+   "tool": "tavily_research",
+   "arguments": {
+    "input": "x",
+    "files": [
+     {
+      "name": "a.txt",
+      "data": "aGk=",
+      "type": "raw"
+     }
+    ]
+   },
+   "error": {
+    "code": -32603,
+    "message": "Internal error: 1 validation error for call[tavily_research]\nfiles.0.type\n  Input should be 'base64' [type=literal_error, input_value='raw', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.14/v/literal_error"
+   }
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1.0
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": "1.0"
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": " 1 "
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": true
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1,
+    "include_images": "false"
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1,
+    "include_images": 0
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1,
+    "include_images": "NO"
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1,
+    "include_images": 0.0
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1,
+    "include_domains": []
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "model context protocol",
+    "max_results": 1,
+    "country": ""
+   },
+   "accepted": true
+  },
+  {
+   "tool": "tavily_search",
+   "arguments": {
+    "query": "",
+    "max_results": 1
+   },
+   "accepted": true,
+   "api_error": {
+    "error": "Search failed",
+    "status": 422,
+    "detail": [
+     {
+      "type": "missing",
+      "loc": [
+       "body",
+       "query"
+      ],
+      "msg": "Field required",
+      "input": {
+       "max_results": 1,
+       "raw_input": {
+        "max_results": 1
+       }
+      }
+     }
+    ],
+    "documentation": "https://docs.tavily.com/documentation/api-reference/endpoint/search"
+   }
+  },
+  {
+   "tool": "tavily_extract",
+   "arguments": {
+    "urls": []
+   },
+   "accepted": true,
+   "api_error": {
+    "error": "Extract failed",
+    "status": 400,
+    "detail": {
+     "error": "All URLs failed validation.",
+     "failed_results": []
+    },
+    "documentation": "https://docs.tavily.com/documentation/api-reference/endpoint/extract"
+   }
+  },
+  {
+   "tool": "tavily_map",
+   "arguments": {
+    "url": "https://example.com",
+    "limit": "2"
+   },
+   "accepted": true
+  }
+ ]
+}

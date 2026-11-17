@@ -1,0 +1,89 @@
+{
+  "tool": "tavily_research",
+  "arguments": {
+    "input": "In two sentences: what is the SOCKS5 protocol and which RFC defines it?",
+    "model": "mini"
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "jsonrpc": "2.0",
+      "method": "notifications/progress",
+      "params": {
+        "progressToken": "p9",
+        "progress": 0.0,
+        "total": 300.0,
+        "message": "Researching... "
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "notifications/progress",
+      "params": {
+        "progressToken": "p9",
+        "progress": 2.0,
+        "total": 300.0,
+        "message": "Researching... "
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "notifications/progress",
+      "params": {
+        "progressToken": "p9",
+        "progress": 5.0,
+        "total": 300.0,
+        "message": "Researching... "
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "method": "notifications/progress",
+      "params": {
+        "progressToken": "p9",
+        "progress": 9.5,
+        "total": 300.0,
+        "message": "Researching... "
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 9,
+      "result": {
+        "content": [
+          {
+            "text": "{\"content\":\"SOCKS5 is a protocol for traversing IP network firewalls that provides a framework for client-server applications in the TCP and UDP domains to securely use a firewall's services, acting conceptually as a \\\"shim-layer\\\" between the application layer and the transport layer [1]. It is defined by RFC 1928, \\\"SOCKS Protocol Version 5,\\\" a Standards Track RFC published in March 1996 by Leech et al. [1], [2], [3].\\n\\nSources\\n[1] https://rfcinfo.com/rfc-1928\\n[2] https://en.wikipedia.org/wiki/SOCKS\\n[3] https://www.rfc-editor.org/info/rfc1928\",\"sources\":[{\"url\":\"https://en.wikipedia.org/wiki/SOCKS\",\"title\":\"SOCKS - Wikipedia\",\"favicon\":\"https://en.wikipedia.org/static/favicon/wikipedia.ico\"},{\"url\":\"https://rfcinfo.com/rfc-1928\",\"title\":\"RFC 1928 - SOCKS Protocol Version 5 | RFCinfo\",\"favicon\":\"https://rfcinfo.com/img/favicon.svg\"},{\"url\":\"https://www.rfc-editor.org/info/rfc1928\",\"title\":\"RFC 1928: SOCKS Protocol Version 5 | RFC Editor\",\"favicon\":\"https://www.rfc-editor.org/api/v1/favicon/180x180.png\"}],\"status\":\"completed\",\"created_at\":\"2026-11-10T20:58:44.960320+00:00\",\"response_time\":8.32,\"request_id\":\"1e244b2b-2c02-42e3-9822-a23a4e4f852a\",\"auth_mode\":\"keyed\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "content": "SOCKS5 is a protocol for traversing IP network firewalls that provides a framework for client-server applications in the TCP and UDP domains to securely use a firewall's services, acting conceptually as a \"shim-layer\" between the application layer and the transport layer [1]. It is defined by RFC 1928, \"SOCKS Protocol Version 5,\" a Standards Track RFC published in March 1996 by Leech et al. [1], [2], [3].\n\nSources\n[1] https://rfcinfo.com/rfc-1928\n[2] https://en.wikipedia.org/wiki/SOCKS\n[3] https://www.rfc-editor.org/info/rfc1928",
+          "sources": [
+            {
+              "url": "https://en.wikipedia.org/wiki/SOCKS",
+              "title": "SOCKS - Wikipedia",
+              "favicon": "https://en.wikipedia.org/static/favicon/wikipedia.ico"
+            },
+            {
+              "url": "https://rfcinfo.com/rfc-1928",
+              "title": "RFC 1928 - SOCKS Protocol Version 5 | RFCinfo",
+              "favicon": "https://rfcinfo.com/img/favicon.svg"
+            },
+            {
+              "url": "https://www.rfc-editor.org/info/rfc1928",
+              "title": "RFC 1928: SOCKS Protocol Version 5 | RFC Editor",
+              "favicon": "https://www.rfc-editor.org/api/v1/favicon/180x180.png"
+            }
+          ],
+          "status": "completed",
+          "created_at": "2026-11-10T20:58:44.960320+00:00",
+          "response_time": 8.32,
+          "request_id": "1e244b2b-2c02-42e3-9822-a23a4e4f852a",
+          "auth_mode": "keyed"
+        }
+      }
+    }
+  ]
+}

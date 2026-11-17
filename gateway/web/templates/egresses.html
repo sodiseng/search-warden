@@ -1,0 +1,150 @@
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead">{{if zh}}指定了代理出口的 key 只走这个出口：出口被隔离或拦截时 key 暂停使用，不会回退直连。{{else}}A key bound to a proxy egress only ever uses it: while the egress is quarantined or blocked the key is paused, never sent direct.{{end}}</p>
+  <div class="actions">
+    <form method="post" action="{{$.Base}}egresses/test" class="inline">{{template "csrf" $.CSRF}}<button type="submit" class="ghost">{{icon "refresh-cw"}}{{T "全部重新测试" "Test all"}}</button></form>
+    <form method="post" action="{{$.Base}}egresses/export" class="inline">{{template "csrf" $.CSRF}}<button type="submit" class="ghost" data-confirm="{{T "导出的文件包含代理密码，确定导出吗？（会记入审计日志）" "The export contains proxy passwords. Export it? (This is written to the audit log.)"}}">{{icon "download"}}{{T "导出节点" "Export nodes"}}</button></form>
+    <button type="button" data-modal="{{$.Base}}egresses/import">{{icon "upload"}}{{T "导入节点" "Import nodes"}}</button>
+  </div>
+</div>
+
+<section class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>{{T "名称" "Name"}}</th><th>{{T "地址" "Address"}}</th><th>{{T "状态" "Status"}}</th><th class="num">{{T "延迟" "Latency"}}</th><th>{{T "出口 IP" "Exit IP"}}</th><th>{{T "绑定的 key" "Keys"}}</th><th>{{T "地区 / 标签" "Region / tags"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Rows}}{{template "egressrow" (dict "R" . "Base" $.Base "CSRF" $.CSRF)}}{{end}}
+    </tbody>
+  </table>
+  </div>
+  <div class="card-foot">{{T "网关定期（默认每 60 秒，可在设置里改）对每个出口做只建连、不带凭据的健康检查。" "The gateway checks every egress periodically (every 60 seconds by default; see Settings) by connecting only, without credentials."}}</div>
+</section>
+
+{{if .Inline}}
+<section class="card">
+  <div class="card-head"><h2>{{icon "route"}}{{T "未保存的手填出口" "Typed-in egresses"}}</h2></div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>{{T "地址" "Address"}}</th><th>{{T "状态" "Status"}}</th><th>{{T "出口 IP" "Exit IP"}}</th><th>{{T "使用它的 key" "Used by"}}</th><th>{{T "保存为节点" "Save as a node"}}</th></tr></thead>
+    <tbody>
+    {{range .Inline}}
+      <tr>
+        <td><code>{{.URL}}</code></td>
+        <td>{{if .View.Health}}{{template "health" .View.Health}}{{end}}</td>
+        <td>{{.View.ExitIP}}{{if .DupWith}}<span class="cell-sub warn">{{if zh}}与 {{join .DupWith "、"}} 出口 IP 相同{{else}}same exit IP as {{join .DupWith ", "}}{{end}}</span>{{end}}</td>
+        <td>{{join .Keys (T "、" ", ")}}</td>
+        <td>
+          <form method="post" action="{{$.Base}}egresses/import" class="inline-field">
+            {{template "csrf" $.CSRF}}<input type="hidden" name="inline_id" value="{{.ID}}">
+            <input type="text" name="name" placeholder="{{T "节点名（可留空）" "node name (optional)"}}" size="14" pattern="[A-Za-z0-9._\-]{1,64}" aria-label="{{T "节点名" "Node name"}}">
+            <button type="submit" class="ghost small">{{T "保存" "Save"}}</button>
+          </form>
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  <div class="card-foot">{{T "这些代理 URL 直接写在 key 里，没有对应的节点。它们同样做健康检查、同样硬绑定；保存为节点后可以统一管理。" "These proxy URLs are written inside keys and have no node. They are health-checked and hard-bound like any other; saving one as a node lets you manage it in one place."}}</div>
+</section>
+{{end}}
+{{end}}
+{{end}}
+
+{{define "egressrow"}}{{$r := .R}}
+<tr>
+  <td>{{if $r.IsDirect}}<span class="cell-main">direct</span>{{else}}<span class="cell-main">{{$r.Node.Name}}</span>{{if not $r.Node.Enabled}}<span class="badge plain">{{T "已停用" "Disabled"}}</span>{{end}}{{end}}</td>
+  <td>{{if $r.IsDirect}}<span class="muted">{{T "服务器本机 IP" "The server's own IP"}}</span>{{else}}<code>{{$r.URL}}</code>{{end}}</td>
+  <td>{{if $r.View.Health}}{{template "health" $r.View.Health}}{{end}}{{if $r.View.LastError}}<span class="cell-sub err">{{$r.View.LastError}}</span>{{end}}{{if not $r.View.Until.IsZero}}<span class="cell-sub">{{if zh}}{{until $r.View.Until}}重试{{else}}retry {{until $r.View.Until}}{{end}}</span>{{end}}</td>
+  <td class="num nowrap">{{if $r.View.LatencyMS}}{{ms $r.View.LatencyMS}}{{end}}</td>
+  <td>{{$r.View.ExitIP}}{{if $r.View.ExitCountry}} <span class="muted small">{{$r.View.ExitCountry}}</span>{{end}}{{if $r.DupWith}}<span class="cell-sub warn">{{if zh}}与 {{join $r.DupWith "、"}} 出口 IP 相同，这些 key 会被关联{{else}}same exit IP as {{join $r.DupWith ", "}}: their keys can be linked{{end}}</span>{{end}}</td>
+  <td class="nowrap">{{len $r.Keys}}{{if $r.Node.MaxKeys}} / {{$r.Node.MaxKeys}}{{end}}{{if $r.OverMax}} <span class="badge err">{{T "超过上限" "Over the limit"}}</span>{{end}}</td>
+  <td class="small">{{$r.Node.Region}}{{if $r.Node.Tags}}{{if $r.Node.Region}} · {{end}}{{join $r.Node.Tags ", "}}{{end}}</td>
+  <td class="actions">
+    <form method="post" action="{{.Base}}egresses/test" class="inline">
+      <input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="id" value="{{$r.ID}}">
+      <button type="submit" class="subtle small">{{icon "play"}}{{T "测试" "Test"}}</button>
+    </form>
+    {{if not $r.IsDirect}}<button type="button" class="ghost small" data-modal="{{.Base}}egresses/{{$r.Node.Name}}">{{icon "pencil"}}{{T "编辑" "Edit"}}</button>{{end}}
+  </td>
+</tr>
+{{end}}
+
+{{/* Import dialog: paste, preview, confirm. The preview replaces the dialog body. */}}
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" (T "导入节点" "Import nodes") "Wide" .Preview)}}
+{{if .Preview}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  <p>{{if zh}}预览：将新增 <strong>{{.New}}</strong> 个节点。确认后写入 <code>egresses.yaml</code>。{{else}}Preview: <strong>{{.New}}</strong> nodes will be added. Confirming writes them to <code>egresses.yaml</code>.{{end}}</p>
+  <div class="table-wrap card">
+  <table class="compact">
+    <thead><tr><th>{{T "行" "Line"}}</th><th>{{T "结果" "Result"}}</th><th>{{T "名称" "Name"}}</th><th>{{T "地址" "Address"}}</th></tr></thead>
+    <tbody>
+    {{range .Preview}}
+      <tr>
+        <td>{{.Line}}</td>
+        <td>{{if eq .Status "new"}}<span class="badge ok">{{T "新增" "New"}}</span>{{else if eq .Status "absorbs_inline"}}<span class="badge ok">{{T "新增" "New"}}</span> <span class="small">{{T "并收编 key 里相同的手填 URL" "and adopts the same URL typed into keys"}}</span>{{else if eq .Status "duplicate"}}<span class="badge">{{T "重复，跳过" "Duplicate, skipped"}}</span>{{if .Existing}} <span class="small muted">{{T "已有节点" "existing node"}} {{.Existing}}</span>{{end}}{{else}}<span class="badge err">{{T "格式错误" "Bad format"}}</span> <span class="small err">{{.Error}}</span>{{end}}</td>
+        <td>{{.Name}}</td>
+        <td>{{if .URL}}<code>{{redact .URL}}</code>{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  <form id="import-form" hx-post="{{$.Base}}egresses/import" hx-target="#modal-body" hx-swap="innerHTML" hidden>
+    {{template "csrf" $.CSRF}}
+    <input type="hidden" name="text" value="{{.Form.Text}}">
+    <input type="hidden" name="scheme" value="{{.Form.Scheme}}">
+    <input type="hidden" name="prefix" value="{{.Form.Prefix}}">
+    <input type="hidden" name="region" value="{{.Form.Region}}">
+    <input type="hidden" name="tags" value="{{.Form.Tags}}">
+    <input type="hidden" name="step" value="confirm">
+    {{if .Form.Absorb}}<input type="hidden" name="absorb" value="on">{{end}}
+  </form>
+</div>
+<footer>
+  <span class="push"></span>
+  <button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+  {{if .New}}<button type="submit" form="import-form">{{icon "check"}}{{if zh}}确认导入 {{.New}} 个节点{{else}}Import {{.New}} nodes{{end}}</button>{{end}}
+</footer>
+{{else}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  <form class="form" id="import-form" hx-post="{{$.Base}}egresses/import" hx-target="#modal-body" hx-swap="innerHTML">
+    {{template "csrf" $.CSRF}}
+    <input type="hidden" name="step" value="preview">
+    <label class="field"><span class="field-label">{{T "每行一个节点" "One node per line"}}</span>
+      <textarea name="text" rows="7" class="code" spellcheck="false" autocomplete="off" placeholder="socks5://user:pass@1.2.3.4:1080 #hk-1">{{.Form.Text}}</textarea>
+    </label>
+    <ul class="formats">
+      <li><code>socks5://user:pass@host:port</code></li>
+      <li><code>host:port</code></li>
+      <li><code>host:port:user:pass</code></li>
+      <li><code>user:pass@host:port</code></li>
+    </ul>
+    <p class="hint">{{if zh}}<code>#</code> 开头的行是注释；行尾可以加 <code> #名称</code>（<code>#</code> 前留一个空格）或 <code>|名称</code>。{{else}}Lines starting with <code>#</code> are comments; a line may end with <code> #name</code> (a space before the <code>#</code>) or <code>|name</code>.{{end}}</p>
+    <div class="fields four">
+      <label class="field"><span class="field-label">{{T "不带协议时按" "Scheme when none is given"}}</span>
+        <select name="scheme">
+          <option value="socks5"{{if eq .Form.Scheme "socks5"}} selected{{end}}>socks5</option>
+          <option value="http"{{if eq .Form.Scheme "http"}} selected{{end}}>http</option>
+        </select>
+      </label>
+      <label class="field"><span class="field-label">{{T "名称前缀" "Name prefix"}}</span><input type="text" name="prefix" value="{{.Form.Prefix}}" placeholder="node-"></label>
+      <label class="field"><span class="field-label">{{T "地区" "Region"}}</span><input type="text" name="region" value="{{.Form.Region}}" placeholder="HK"></label>
+      <label class="field"><span class="field-label">{{T "标签" "Tags"}}</span><input type="text" name="tags" value="{{.Form.Tags}}" placeholder="{{T "逗号分隔" "comma-separated"}}"></label>
+    </div>
+    <label class="choice"><input type="checkbox" name="absorb"{{if .Form.Absorb}} checked{{end}}>{{T "有 key 手填了相同的代理 URL 时，改为引用新节点" "Where a key has the same proxy URL typed in, point it at the new node"}}</label>
+  </form>
+</div>
+<footer>
+  <span class="push"></span>
+  <button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+  <button type="submit" form="import-form">{{icon "eye"}}{{T "预览" "Preview"}}</button>
+</footer>
+{{end}}
+{{end}}
+{{end}}

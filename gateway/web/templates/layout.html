@@ -1,0 +1,89 @@
+{{define "layout"}}<!doctype html>
+<html lang="{{.HTMLLang}}" data-theme="{{.Theme}}" data-base="{{.Base}}"{{if .Self}} data-self="{{.Self}}"{{end}} data-t-loading="{{T "载入中…" "Loading…"}}" data-t-failed="{{T "载入失败：" "Could not load: "}}" data-t-copied="{{T "已复制" "Copied"}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":"...","swap":true}]}'>
+<title>{{.Title}} · search-warden</title>
+<link rel="icon" type="image/svg+xml" href="{{.Base}}static/favicon.svg">
+<link rel="stylesheet" href="{{.Base}}static/vendor/pico-2.1.1.indigo.min.css">
+<link rel="stylesheet" href="{{.Base}}static/app.css?v={{.Version}}">
+<script src="{{.Base}}static/vendor/htmx-2.0.4.min.js" defer></script>
+<script src="{{.Base}}static/app.js?v={{.Version}}" defer></script>
+</head>
+<body>
+{{template "toast" .}}
+{{if .LoggedIn}}
+<div class="shell">
+  <aside class="side" id="side">
+    <a class="brand" href="{{.Base}}"><span class="brand-mark">{{icon "shield-check"}}</span><span>search-warden</span></a>
+    <nav class="side-nav" aria-label="{{T "主导航" "Main"}}">
+      <p class="nav-group">{{T "监控" "Monitor"}}</p>
+      <a href="{{.Base}}" aria-current="{{if eq .Nav "home"}}page{{else}}false{{end}}">{{icon "layout-dashboard"}}<span>{{T "概览" "Overview"}}</span></a>
+      <a href="{{.Base}}requests" aria-current="{{if eq .Nav "requests"}}page{{else}}false{{end}}">{{icon "activity"}}<span>{{T "请求" "Requests"}}</span></a>
+      <p class="nav-group">{{T "资源" "Resources"}}</p>
+      <a href="{{.Base}}keys" aria-current="{{if eq .Nav "keys"}}page{{else}}false{{end}}">{{icon "key-round"}}<span>Keys</span></a>
+      <a href="{{.Base}}egresses" aria-current="{{if eq .Nav "egresses"}}page{{else}}false{{end}}">{{icon "waypoints"}}<span>{{T "出口" "Egresses"}}</span></a>
+      <a href="{{.Base}}tokens" aria-current="{{if eq .Nav "tokens"}}page{{else}}false{{end}}">{{icon "ticket"}}<span>{{T "令牌" "Tokens"}}</span></a>
+      <p class="nav-group">{{T "系统" "System"}}</p>
+      <a href="{{.Base}}settings" aria-current="{{if eq .Nav "settings"}}page{{else}}false{{end}}">{{icon "sliders-horizontal"}}<span>{{T "设置" "Settings"}}</span></a>
+      <a href="{{.Base}}files" aria-current="{{if eq .Nav "files"}}page{{else}}false{{end}}">{{icon "file-text"}}<span>{{T "文件" "Files"}}</span></a>
+      <a href="{{.Base}}security" aria-current="{{if eq .Nav "security"}}page{{else}}false{{end}}">{{icon "lock"}}<span>{{T "安全" "Security"}}</span></a>
+    </nav>
+    <div class="side-foot">search-warden {{.Version}}</div>
+  </aside>
+  <div class="scrim" data-toggle-nav></div>
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="icon-btn menu-btn" data-toggle-nav aria-label="{{T "菜单" "Menu"}}">{{icon "menu"}}</button>
+      <h1 class="page-title">{{.Title}}</h1>
+      <div class="topbar-tools">
+        {{template "prefs" .}}
+        <form method="post" action="{{.Base}}logout" class="inline">
+          <input type="hidden" name="csrf" value="{{.CSRF}}">
+          <button type="submit" class="icon-btn" aria-label="{{T "退出登录" "Sign out"}}" data-tooltip="{{T "退出登录" "Sign out"}}" data-placement="bottom">{{icon "log-out"}}</button>
+        </form>
+      </div>
+    </header>
+    <main class="content">
+{{template "pageerror" .}}
+{{template "content" .}}
+    </main>
+  </div>
+</div>
+{{else}}
+<main class="guest">
+  <div class="guest-tools">{{template "prefs" .}}</div>
+  <a class="brand" href="{{.Base}}login"><span class="brand-mark">{{icon "shield-check"}}</span><span>search-warden</span></a>
+{{template "pageerror" .}}
+{{template "content" .}}
+</main>
+{{end}}
+{{/* One dialog for every create / edit / generate flow: the body is filled from the
+     server by [data-modal="<url>"] and swapped in place by htmx forms. */}}
+<dialog id="modal"><article id="modal-body"></article></dialog>
+{{/* The question a [data-confirm] button asks before its form is sent. */}}
+<dialog id="confirm"><article>
+  <div class="modal-main"><p id="confirm-text"></p></div>
+  <footer><span class="push"></span><button type="button" class="ghost" id="confirm-no">{{T "取消" "Cancel"}}</button><button type="button" id="confirm-yes">{{T "确定" "Confirm"}}</button></footer>
+</article></dialog>
+</body>
+</html>{{end}}
+
+{{/* prefs: the language and theme switches. app.js writes the choice to a cookie;
+     the server renders it, so there is no flash of the wrong theme or language. */}}
+{{define "prefs"}}
+<div class="seg lang" aria-label="Language">
+  <button type="button" data-set-lang="zh" aria-pressed="{{if eq .Lang "zh"}}true{{else}}false{{end}}">中文</button>
+  <button type="button" data-set-lang="en" aria-pressed="{{if eq .Lang "en"}}true{{else}}false{{end}}">EN</button>
+</div>
+<button type="button" class="icon-btn" data-toggle-theme aria-label="{{T "切换深色 / 浅色" "Switch dark / light"}}" data-tooltip="{{T "切换深色 / 浅色" "Switch dark / light"}}" data-placement="bottom"><span class="only-light">{{icon "moon"}}</span><span class="only-dark">{{icon "sun"}}</span></button>
+{{end}}
+
+{{/* toast: a confirmation floats above the page and leaves on its own. */}}
+{{define "toast"}}{{if and .Flash (not .FlashInCard)}}<div class="toast" role="status" data-toast>{{icon "circle-check"}}<span>{{.Flash}}</span><button type="button" class="icon-btn" data-toast-close aria-label="{{T "关闭" "Close"}}">{{icon "x"}}</button></div>{{end}}{{end}}
+
+{{/* pageerror: an error stays in the page until the next action. Pages that set
+     FlashInCard (login, TOTP setup) show it next to their form instead. */}}
+{{define "pageerror"}}{{if and .Error (not .FlashInCard)}}<div class="alert err" role="alert">{{icon "circle-alert"}}<div>{{.Error}}</div></div>{{end}}{{end}}

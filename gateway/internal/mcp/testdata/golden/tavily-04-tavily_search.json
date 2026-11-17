@@ -1,0 +1,45 @@
+{
+  "tool": "tavily_search",
+  "arguments": {
+    "query": "",
+    "max_results": 1
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "jsonrpc": "2.0",
+      "id": 104,
+      "result": {
+        "content": [
+          {
+            "text": "{\"error\":\"Search failed\",\"status\":422,\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"query\"],\"msg\":\"Field required\",\"input\":{\"max_results\":1,\"raw_input\":{\"max_results\":1}}}],\"documentation\":\"https://docs.tavily.com/documentation/api-reference/endpoint/search\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "error": "Search failed",
+          "status": 422,
+          "detail": [
+            {
+              "type": "missing",
+              "loc": [
+                "body",
+                "query"
+              ],
+              "msg": "Field required",
+              "input": {
+                "max_results": 1,
+                "raw_input": {
+                  "max_results": 1
+                }
+              }
+            }
+          ],
+          "documentation": "https://docs.tavily.com/documentation/api-reference/endpoint/search"
+        }
+      }
+    }
+  ]
+}

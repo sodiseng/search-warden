@@ -1,0 +1,22 @@
+# 出口节点（SOCKS5 / HTTP 代理）
+#
+# 可以手工编辑，也可以在管理面板"出口 → 导入节点"批量导入，两边双向同步。
+# 上游 key 可以通过节点名引用出口（egress: hk-res-1），也可以直接写代理 URL；
+# 两种写法指向同一个代理时，视为同一个出口（共用健康状态和出口 IP）。
+#
+# 字段：
+#   name      节点名：字母、数字和 - _ .，不能叫 direct，也不能是 IP 地址
+#   url       socks5:// socks5h:// http:// https://，可带 用户名:密码@
+#   enabled   是否启用，默认 true；停用后绑定它的 key 暂停使用（不会改走直连）
+#   max_keys  可选：绑定的 key 超过这个数时面板提示风险
+#   region    可选：地区，自动分配出口时参考
+#   tags      可选：标签，例如 [residential, hk]
+#   note      可选：备注
+egresses:
+  # - name: hk-res-1
+  #   url: socks5://user:pass@1.2.3.4:1080
+  #   region: HK
+  #   tags: [residential]
+  # - name: us-res-1
+  #   url: http://user:pass@5.6.7.8:3128
+  #   enabled: false

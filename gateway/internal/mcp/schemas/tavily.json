@@ -1,0 +1,630 @@
+{
+  "source": "https://mcp.tavily.com/mcp/",
+  "protocolVersion": "2025-06-18",
+  "serverInfo": {
+    "name": "tavily-mcp",
+    "version": "4.1.5"
+  },
+  "instructions": "Researching with Tavily: when a result names a likely answer, read its page with tavily_extract to confirm it before searching more, and name the candidate in your next query when testing it. Keep your best candidate until a source contradicts it; if none confirms it, also search the main alternative by name. Once new searches stop adding evidence, answer with the best-supported candidate, from sources rather than memory, and say what you could not confirm.",
+  "tools": [
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Search the web for current information on any topic. Use for news, facts, or data beyond your knowledge cutoff, and before answering any question about specific facts, figures or recent events. Returns snippets and source URLs. Results are short excerpts; read a page with tavily_extract to confirm what it says.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "Search query. Keep it short and specific, in the words the page itself would use; one idea per query.",
+            "type": "string"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The maximum number of search results to return. Ask for 10 when looking for a specific fact, page or entity."
+          },
+          "search_depth": {
+            "anyOf": [
+              {
+                "enum": [
+                  "basic",
+                  "advanced",
+                  "fast",
+                  "ultra-fast"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The depth of the search. 'basic' for generic results, 'advanced' for more thorough search, 'fast' for optimized low latency with high relevance, 'ultra-fast' for prioritizing latency above all else. Use 'advanced' when looking for a specific fact, page or entity, or when 'basic' did not find it."
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "enum": [
+                  "general",
+                  "news"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Search category. Use 'general' for almost all searches, including current events and requests that combine news with other information. Use 'news' only when the user explicitly asks for news, headlines, or news coverage."
+          },
+          "time_range": {
+            "anyOf": [
+              {
+                "enum": [
+                  "day",
+                  "week",
+                  "month",
+                  "year"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The time range back from the current date to include in the search results. Filters by when a page was published, not by when the events it describes happened."
+          },
+          "include_images": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include a list of query-related images in the response"
+          },
+          "include_image_descriptions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include a list of query-related images and their descriptions in the response"
+          },
+          "include_raw_content": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include the cleaned and parsed HTML content of each search result. Whole pages can make the response too large to read; to read one page, use tavily_extract with a query instead."
+          },
+          "include_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "A list of domains to specifically include in the search results, if the user asks to search on specific sites set this to the domain of the site. Use full domains such as 'en.wikipedia.org' or 'sec.gov', not suffixes such as 'edu'. This is a hard filter: if results come back empty or thin, search again without it."
+          },
+          "exclude_domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "List of domains to specifically exclude, if the user asks to exclude a domain set this to the domain of the site"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Boost search results from a specific country. Must be a full country name (e.g., 'United States', 'Japan', 'Germany'). ISO country codes (e.g., 'us', 'jp') are not supported. Available only if topic is general. See https://docs.tavily.com/documentation/api-reference/search for the full list of supported countries."
+          },
+          "include_favicon": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Whether to include the favicon URL for each result"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Will return all results after the specified start date. Required to be written in the format YYYY-MM-DD. Filters by publish date, not by when events happened; leave it empty when looking for facts about past events."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Will return all results before the specified end date. Required to be written in the format YYYY-MM-DD. Filters by publish date, not by when events happened; leave it empty when looking for facts about past events."
+          },
+          "exact_match": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Only return results containing the exact phrase(s) in quotes in your query"
+          },
+          "include_published_date": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include detected publication dates (beta)"
+          },
+          "filter_by_published_date": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter results to the requested date window and exclude results with no detected publication date"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "name": "tavily_search",
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "title": "Tavily Search"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Extract content from URLs. Returns raw page content in markdown or text format. Use it to read a page in full or to confirm a fact found in search results. Pages that could not be read are listed in failed_results; retry a timeout once, then try another source.",
+      "inputSchema": {
+        "properties": {
+          "urls": {
+            "description": "List of URLs to extract content from. Prefer URLs from search results; guessed page URLs often fail.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "extract_depth": {
+            "default": "basic",
+            "description": "Use 'advanced' for LinkedIn, protected sites, or tables/embedded content",
+            "enum": [
+              "basic",
+              "advanced"
+            ],
+            "type": "string"
+          },
+          "include_images": {
+            "default": false,
+            "description": "Include images from pages",
+            "type": "boolean"
+          },
+          "format": {
+            "default": "markdown",
+            "description": "Output format",
+            "enum": [
+              "markdown",
+              "text"
+            ],
+            "type": "string"
+          },
+          "include_favicon": {
+            "default": false,
+            "description": "Include favicon URLs",
+            "type": "boolean"
+          },
+          "query": {
+            "default": "",
+            "description": "Query to rerank content chunks by relevance. Set it to get only the relevant passages of a long article or PDF. Leave it empty for tables, lists, data files and API responses, which it can cut short; read those whole, or request a narrower URL.",
+            "type": "string"
+          },
+          "include_usage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include credit usage"
+          }
+        },
+        "required": [
+          "urls"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "name": "tavily_extract",
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "title": "Tavily Extract"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Crawl a website starting from a URL. Extracts content from pages with configurable depth and breadth.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "The root URL to begin the crawl",
+            "type": "string"
+          },
+          "max_depth": {
+            "default": 1,
+            "description": "Max depth of the crawl. Defines how far from the base URL the crawler can explore.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "max_breadth": {
+            "default": 20,
+            "description": "Max number of links to follow per level of the tree (i.e., per page)",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Total number of links the crawler will process before stopping",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "instructions": {
+            "default": "",
+            "description": "Natural language instructions for the crawler. Instructions specify which types of pages the crawler should return.",
+            "type": "string"
+          },
+          "select_paths": {
+            "default": [],
+            "description": "Regex patterns to select only URLs with specific path patterns (e.g., /docs/.*, /api/v1.*)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "select_domains": {
+            "default": [],
+            "description": "Regex patterns to restrict crawling to specific domains or subdomains (e.g., ^docs\\.example\\.com$)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "allow_external": {
+            "default": true,
+            "description": "Whether to return external links in the final response",
+            "type": "boolean"
+          },
+          "extract_depth": {
+            "default": "basic",
+            "description": "Advanced extraction retrieves more data, including tables and embedded content, with higher success but may increase latency",
+            "enum": [
+              "basic",
+              "advanced"
+            ],
+            "type": "string"
+          },
+          "format": {
+            "default": "markdown",
+            "description": "The format of the extracted web page content. markdown returns content in markdown format. text returns plain text and may increase latency.",
+            "enum": [
+              "markdown",
+              "text"
+            ],
+            "type": "string"
+          },
+          "include_favicon": {
+            "default": false,
+            "description": "Whether to include the favicon URL for each result",
+            "type": "boolean"
+          },
+          "include_usage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include credit usage"
+          },
+          "chunks_per_source": {
+            "anyOf": [
+              {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Chunks per source; requires instructions"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "name": "tavily_crawl",
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "title": "Tavily Crawl"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Map a website's structure. Returns a list of URLs found starting from the base URL.",
+      "inputSchema": {
+        "properties": {
+          "url": {
+            "description": "The root URL to begin the mapping",
+            "type": "string"
+          },
+          "max_depth": {
+            "default": 1,
+            "description": "Max depth of the mapping. Defines how far from the base URL the crawler can explore",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "max_breadth": {
+            "default": 20,
+            "description": "Max number of links to follow per level of the tree (i.e., per page)",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "description": "Total number of links the crawler will process before stopping",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "instructions": {
+            "default": "",
+            "description": "Natural language instructions for the crawler",
+            "type": "string"
+          },
+          "select_paths": {
+            "default": [],
+            "description": "Regex patterns to select only URLs with specific path patterns (e.g., /docs/.*, /api/v1.*)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "select_domains": {
+            "default": [],
+            "description": "Regex patterns to restrict crawling to specific domains or subdomains (e.g., ^docs\\.example\\.com$)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "allow_external": {
+            "default": true,
+            "description": "Whether to return external links in the final response",
+            "type": "boolean"
+          },
+          "include_usage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Include credit usage"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "name": "tavily_map",
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "title": "Tavily Map"
+    },
+    {
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Perform comprehensive research on a given topic or question. Use this tool when you need to gather information from multiple sources, including web pages, documents, and other resources, to answer a question or complete a task. Returns a detailed response based on the research findings. Rate limit: 20 requests per minute.",
+      "inputSchema": {
+        "properties": {
+          "input": {
+            "description": "A comprehensive description of the research task",
+            "type": "string"
+          },
+          "model": {
+            "default": "auto",
+            "description": "Defines the degree of depth of the research. 'mini' is good for narrow tasks with few subtopics. 'pro' is good for broad tasks with many subtopics",
+            "enum": [
+              "mini",
+              "pro",
+              "auto"
+            ],
+            "type": "string"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "const": "base64",
+                      "default": "base64",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "data"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Base64 .txt/.md/.json attachments; up to 80000 words combined"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "type": "object",
+        "additionalProperties": false
+      },
+      "name": "tavily_research",
+      "outputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "title": "Tavily Research"
+    }
+  ]
+}

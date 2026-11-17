@@ -1,0 +1,55 @@
+{{/* Full-page fallback (a direct visit to security/totp/setup); the Security page opens the dialog below. */}}
+{{define "content"}}
+<div class="page-head">
+  <p class="lead">{{T "用验证器 App 给登录加一道 6 位数字验证码。" "Add a 6-digit code from an authenticator app to every sign-in."}}</p>
+  <div class="actions"><a role="button" class="ghost" href="{{.Base}}security" data-back>{{T "返回安全" "Back to Security"}}</a></div>
+</div>
+<section class="card narrow">
+  <div class="card-body form">
+    {{template "err" .Error}}
+    {{template "totpbody" (dict "P" . "Page" true)}}
+  </div>
+  <div class="card-foot btn-row">{{template "totpactions" .}}</div>
+</section>
+{{end}}
+
+{{define "modal"}}
+{{template "mhead" (dict "Title" (T "开启两步验证" "Turn on two-step verification"))}}
+<div class="modal-main">
+  {{template "err" .Error}}
+  {{template "totpbody" (dict "P" .)}}
+</div>
+<footer>{{template "totpactions" .}}</footer>
+{{end}}
+
+{{define "totpbody"}}
+{{$page := .Page}}{{with .P}}
+<ol class="steps">
+  <li>{{T "在验证器 App（如 Google Authenticator、Microsoft Authenticator、1Password）中选择\"手动输入密钥\"，填入下面的密钥，类型选\"基于时间\"。" "In an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…), choose \"enter a setup key\", paste the key below and pick \"time based\"."}}</li>
+  <li>{{T "输入 App 显示的 6 位验证码和当前密码，确认开启。" "Enter the 6-digit code the app shows and your current password to confirm."}}</li>
+</ol>
+<div class="copyline"><code class="secret" data-copy>{{.Secret}}</code><button type="button" class="ghost" data-copy-target>{{icon "copy"}}{{T "复制" "Copy"}}</button></div>
+<details>
+  <summary>{{T "otpauth 链接（可用于生成二维码）" "otpauth link (for making a QR code)"}}</summary>
+  <p><code class="pre">{{.URI}}</code></p>
+</details>
+<form class="form" id="totp-form" method="post" action="{{.Base}}security/totp/enable"{{if not $page}} hx-post="{{.Base}}security/totp/enable" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  <input type="hidden" name="csrf" value="{{.CSRF}}">
+  <input type="hidden" name="secret" value="{{.Secret}}">
+  <div class="fields">
+    <label class="field"><span class="field-label">{{T "验证码" "Code"}}</span>
+      <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required>
+    </label>
+    <label class="field"><span class="field-label">{{T "当前密码" "Current password"}}</span>
+      <input type="password" name="current" autocomplete="current-password" required>
+    </label>
+  </div>
+</form>
+{{end}}
+{{end}}
+
+{{define "totpactions"}}
+<span class="push"></span>
+<button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+<button type="submit" form="totp-form">{{icon "shield-check"}}{{T "确认开启" "Turn it on"}}</button>
+{{end}}

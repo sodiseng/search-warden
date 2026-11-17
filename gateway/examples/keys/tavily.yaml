@@ -1,0 +1,28 @@
+# Tavily 上游 key
+#
+# 可以手工编辑，也可以在管理面板修改，两边双向同步。
+# 修改后约 1 秒自动生效；写错时保持原配置运行，并在面板提示出错的行号。
+
+# 本文件内所有 key 的默认值，单个 key 可以覆盖。
+defaults:
+  plan: free          # free | paid
+  egress: direct      # direct（服务器直连）、egresses.yaml 里的节点名，或代理 URL
+  reset_day: 1        # 额度每月重置日（1-28）
+  enabled: true
+
+keys:
+  # 完整写法：
+  # - key: tvly-dev-xxxxxxxxxxxxxxxx
+  #   label: free-01
+  #   egress: hk-res-1                 # 引用节点名
+  #   region: HK                       # 可选：key 注册时的地区
+  # - key: tvly-prod-xxxxxxxxxxxxxxx
+  #   label: paid-01
+  #   plan: paid
+  #   priority: 1                      # 数字越大越靠后使用；默认免费 0、付费 1
+  #   budget_monthly: 4000             # 付费 key 每月最多使用的 credits；0 表示不限制
+  #   rate_limit: 1000                 # 可选：每分钟请求数上限。默认按官方文档：tvly-prod- 开头 1000，其他 100
+  #   weight: 2                        # 可选：同一优先级内按权重比例分配请求（默认 1）。例如 2:1 表示这个 key 承担约 2/3
+  #   egress: socks5://u:p@9.9.9.9:1080   # 也可以直接写代理 URL
+  # 简写：只写 key，其余字段都用 defaults
+  # - tvly-dev-yyyyyyyyyyyyyyyy

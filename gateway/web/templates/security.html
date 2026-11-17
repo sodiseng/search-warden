@@ -1,0 +1,110 @@
+{{define "content"}}
+<div class="grid two">
+  <section class="card">
+    <div class="card-head"><h2>{{icon "lock"}}{{T "修改密码" "Change password"}}</h2></div>
+    <div class="card-body">
+      <form method="post" action="{{.Base}}security/password" class="form">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <label class="field"><span class="field-label">{{T "当前密码" "Current password"}}</span>
+          <input type="password" name="current" autocomplete="current-password" required>
+        </label>
+        <div class="fields">
+          <label class="field"><span class="field-label">{{T "新密码" "New password"}}</span>
+            <input type="password" name="new" autocomplete="new-password" minlength="{{.MinPassword}}" required>
+            <small>{{if zh}}至少 {{.MinPassword}} 个字符{{else}}At least {{.MinPassword}} characters{{end}}</small>
+          </label>
+          <label class="field"><span class="field-label">{{T "确认新密码" "Confirm the new password"}}</span>
+            <input type="password" name="confirm" autocomplete="new-password" minlength="{{.MinPassword}}" required>
+          </label>
+        </div>
+        <div class="btn-row"><button type="submit">{{icon "check"}}{{T "修改密码" "Change password"}}</button></div>
+      </form>
+    </div>
+    <div class="card-foot">{{T "修改后其他所有会话都会失效，当前会话保持登录。" "Every other session is signed out; this one stays signed in."}}</div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>{{icon "shield-check"}}{{T "两步验证（TOTP）" "Two-step verification (TOTP)"}}</h2>
+      {{if .TOTPEnabled}}<span class="badge ok">{{T "已开启" "On"}}</span>{{else}}<span class="badge">{{T "未开启" "Off"}}</span>{{end}}
+    </div>
+    <div class="card-body">
+      {{if .TOTPEnabled}}
+      <form method="post" action="{{.Base}}security/totp/disable" class="form">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <div class="fields">
+          <label class="field"><span class="field-label">{{T "当前密码" "Current password"}}</span>
+            <input type="password" name="current" autocomplete="current-password" required>
+          </label>
+          <label class="field"><span class="field-label">{{T "验证码" "Code"}}</span>
+            <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required>
+          </label>
+        </div>
+        <div class="btn-row"><button type="submit" class="danger ghost">{{T "关闭两步验证" "Turn off two-step verification"}}</button></div>
+      </form>
+      {{else}}
+      <p>{{T "开启后，登录时除了密码还需要输入验证器 App 中的 6 位数字。" "When on, signing in needs the 6-digit code from an authenticator app as well as the password."}}</p>
+      <div class="btn-row"><button type="button" data-modal="{{.Base}}security/totp/setup">{{icon "shield-check"}}{{T "开启两步验证" "Turn on two-step verification"}}</button></div>
+      {{end}}
+    </div>
+    <div class="card-foot">{{if zh}}丢失手机时：删除 <code>config.yaml</code> 中 admin 下的 <code>totp_secret</code> 一行即可关闭。{{else}}Lost the phone? Delete the <code>totp_secret</code> line under admin in <code>config.yaml</code> to turn it off.{{end}}</div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>{{icon "user"}}{{T "登录会话" "Sessions"}}</h2>
+    <form method="post" action="{{.Base}}security/sessions/revoke-others" class="inline">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <button type="submit" class="ghost small">{{icon "log-out"}}{{T "退出其他所有会话" "Sign out all other sessions"}}</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>{{T "登录时间" "Signed in"}}</th><th>{{T "最近活动" "Last active"}}</th><th>IP</th><th>{{T "浏览器" "Browser"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Sessions}}
+      <tr>
+        <td class="nowrap">{{.Created}}</td>
+        <td class="nowrap">{{.LastSeen}}</td>
+        <td><code>{{.IP}}</code></td>
+        <td class="clip" title="{{.UA}}">{{.UAShort}}</td>
+        <td class="actions">{{if .Current}}<span class="badge ok">{{T "当前" "This session"}}</span>{{else}}
+          <form method="post" action="{{$.Base}}security/sessions/revoke" class="inline">
+            <input type="hidden" name="csrf" value="{{$.CSRF}}">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button type="submit" class="danger ghost small">{{T "退出" "Sign out"}}</button>
+          </form>{{end}}
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="card" id="audit">
+  <div class="card-head">
+    <h2>{{icon "history"}}{{T "审计日志" "Audit log"}}</h2>
+    <div class="seg" aria-label="{{T "来源" "Source"}}">
+      <a href="{{.Base}}security#audit" aria-current="{{if eq .Data.Source ""}}true{{else}}false{{end}}">{{T "全部" "All"}}</a>
+      <a href="{{.Base}}security?source=panel#audit" aria-current="{{if eq .Data.Source "panel"}}true{{else}}false{{end}}">{{T "面板" "Panel"}}</a>
+      <a href="{{.Base}}security?source=file#audit" aria-current="{{if eq .Data.Source "file"}}true{{else}}false{{end}}">{{T "手工改文件" "File edits"}}</a>
+      <a href="{{.Base}}security?source=system#audit" aria-current="{{if eq .Data.Source "system"}}true{{else}}false{{end}}">{{T "系统" "System"}}</a>
+    </div>
+  </div>
+  {{if .Data.Entries}}
+  <div class="table-wrap">
+  <table class="compact">
+    <thead><tr><th>{{T "时间" "Time"}}</th><th>{{T "来源" "Source"}}</th><th>IP</th><th>{{T "操作" "Action"}}</th><th>{{T "对象" "Target"}}</th><th>{{T "变更" "Change"}}</th></tr></thead>
+    <tbody>
+    {{range .Data.Entries}}
+      <tr><td class="nowrap">{{dt .TS}}</td><td><span class="badge plain">{{.Source}}</span></td><td class="nowrap">{{.IP}}</td><td><code>{{.Action}}</code></td><td class="small">{{.Target}}</td><td class="small pre">{{.Diff}}</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  <div class="card-foot">{{T "显示最近 100 条。key、密码和令牌在审计日志里都已脱敏。" "The latest 100 entries. Keys, passwords and tokens are redacted in the audit log."}}</div>
+  {{else}}<p class="empty">{{icon "history"}}<span>{{T "没有记录。" "No entries."}}</span></p>{{end}}
+</section>
+{{end}}

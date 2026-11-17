@@ -1,0 +1,11 @@
+# Build context for the Dockerfile: an allowlist. Only the Go module is sent to
+# the builder; data directories (plaintext keys) and local files never are.
+*
+!gateway/
+
+**/bin/
+**/data/
+**/*.env
+**/*.db
+**/*.db-wal
+**/*.db-shm

@@ -1,0 +1,66 @@
+# search-warden 主配置文件
+#
+# 本文件与管理面板双向同步：
+#   - 在面板修改设置，会写回本文件，并保留你写的注释；
+#   - 手工修改并保存后，约 1 秒自动生效；
+#   - 写错时网关继续使用上一份正确的配置，面板会提示出错的行号。
+# 出口节点在 egresses.yaml，上游 key 在 keys/ 目录，下游令牌在 tokens.yaml。
+
+admin:
+  username: admin
+  # 管理员密码：在下面写明文密码（至少 12 个字符），网关读取后会自动改写为 password_hash，
+  # 磁盘上不保留明文。也可以用环境变量 WARDEN_ADMIN_PASSWORD 设置初始密码。
+  # 忘记密码时，重新写一行 password: <新密码> 即可（会同时让所有已登录的会话失效）。
+  # password:
+  # 两步验证（TOTP）密钥：在面板开启后自动写入；丢失手机时删除这一行即可关闭两步验证。
+  # totp_secret:
+  session_idle_minutes: 60      # 闲置多久需要重新登录（分钟）
+  session_max_days: 7           # 登录状态最长保持多少天
+
+routing:
+  strategy: balanced            # 选 key 策略：balanced | drain-first | round-robin | random
+  max_attempts: 3               # 单个请求最多尝试几个 key
+  deadline_seconds: 180         # 单个请求的总时限（秒）
+  affinity_minutes: 30          # 同一调用方在这段时间内尽量使用相同的 key（0 表示不固定）
+  per_key_rpm: 0                # 单个 key 每分钟最多请求数，避免突发；0 表示不限制
+  per_key_concurrency: 0        # 单个 key 同时进行的请求数上限；0 表示不限制
+
+upstream:
+  precise_billing: true         # Tavily 请求附加 include_usage 以获取精确消耗，返回给客户端前会去掉
+  user_agent:                   # 发往上游的固定 User-Agent，留空使用内置默认值
+    tavily: ""
+    exa: ""
+
+quota:
+  # 定期用 Tavily 的 GET /usage 同步每个 key 的真实额度（不消耗 credits）。
+  # 官方限制每个 key 每 10 分钟最多查 10 次；网关对同一个 key、同一个出口 IP 至少间隔 65 秒。
+  # 设为 false 时只靠本地记账，额度用尽以上游返回的 432/433 为准。
+  sync: true
+  hot_interval_minutes: 15      # 最近 2 小时用过的 key，多久同步一次（分钟）
+  cold_interval_hours: 24       # 其他 key 多久同步一次（小时）
+  # Exa 没有可查询余额的接口，只能本地记账。免费 key 没写 budget_monthly 时，按每月免费额度估算剩余，
+  # 只用于显示和排序，不会因此停用 key（官方 2026-11 的政策：每月 1 日重置为 10 美元）。
+  exa_free_monthly_usd: 10
+
+logs:
+  retention_days: 30            # 原始请求日志保留天数，每天滚动删除
+  max_size_mb: 1024             # 日志库容量上限（MB），超过时提前删除最旧的日志
+  query_preview_chars: 40       # 记录搜索词的前 N 个字符；0 表示不记录
+
+network:
+  # 哪些来源发来的 X-Forwarded-For 可以信任（反向代理所在的网段）。
+  # 默认包含本机和私有网段：放在同机或 Docker 网络的反向代理后面时无需修改。
+  trusted_proxies: [127.0.0.0/8, "::1/128", 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, "fc00::/7"]
+  # 用哪些请求头识别客户端 IP。X-Real-IP、CF-Connecting-IP 可能被客户端伪造，
+  # 只有确认反向代理会覆盖它们（或前面是 Cloudflare）时才添加。
+  client_ip_headers: [X-Forwarded-For]
+
+mcp:
+  tavily:
+    mode: facade                # facade：网关本地实现官方同名工具（透传模式 passthrough 计划在二期提供）
+  exa:
+    mode: facade
+
+egress:
+  max_keys_per_egress: 0        # 单个出口绑定的 key 超过这个数时面板提示关联风险；0 表示不提示
+  health_interval_seconds: 60   # 出口健康检查间隔（秒）

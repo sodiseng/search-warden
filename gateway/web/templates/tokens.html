@@ -1,0 +1,49 @@
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead">{{if zh}}令牌是 agent / SDK 调用网关时使用的凭据，代替官方的 API key。<code>tokens.yaml</code> 里只保存哈希，明文只在创建或轮换时显示一次。{{else}}A token is what an agent or SDK presents to the gateway in place of the official API key. <code>tokens.yaml</code> stores only its hash; the token itself is shown once, when it is created or rotated.{{end}}</p>
+  <div class="actions"><button type="button" data-modal="{{$.Base}}tokens/new">{{icon "plus"}}{{T "创建令牌" "Create a token"}}</button></div>
+</div>
+<section class="card">
+  {{if .Rows}}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>{{T "名称" "Name"}}</th><th>{{T "前缀" "Prefix"}}</th><th>{{T "范围" "Scope"}}</th><th>{{T "限额" "Limits"}}</th><th>{{T "状态" "Status"}}</th><th>{{T "30 天用量" "Last 30 days"}}</th><th>{{T "最近使用" "Last used"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Rows}}
+      <tr>
+        <td><span class="cell-main">{{.T.Name}}</span>{{if .T.Note}}<span class="cell-sub">{{.T.Note}}</span>{{end}}</td>
+        <td><code>{{.T.Prefix}}…</code></td>
+        <td class="small">{{join .T.Providers ", "}} · {{join .T.Surfaces ", "}}{{if .T.Tools}}<span class="cell-sub">{{T "工具：" "Tools: "}}{{join .T.Tools ", "}}</span>{{end}}{{if ne .T.KeyGroup "all"}}<span class="cell-sub">{{if eq .T.KeyGroup "free"}}{{T "只用免费 key" "Free keys only"}}{{else}}{{T "只用付费 key" "Paid keys only"}}{{end}}</span>{{end}}{{if .T.IPAllow}}<span class="cell-sub">{{T "限 IP" "IP-restricted"}}</span>{{end}}</td>
+        <td class="small">{{template "limits" .T.Limits}}</td>
+        <td>{{if .Expired}}<span class="badge err">{{T "已过期" "Expired"}}</span>{{else if .T.Enabled}}<span class="badge ok">{{T "启用" "Enabled"}}</span>{{else}}<span class="badge">{{T "已停用" "Disabled"}}</span>{{end}}{{if not .T.Expires.IsZero}}<span class="cell-sub">{{if zh}}{{day .T.Expires}} 过期{{else}}expires {{day .T.Expires}}{{end}}</span>{{end}}</td>
+        <td class="nowrap">{{if .Requests}}{{if zh}}{{num .Requests}} 次{{else}}{{num .Requests}} req{{end}}{{if .Errors}} <span class="small err">{{T "失败" "failed"}} {{pct .Errors .Requests}}</span>{{end}}<span class="cell-sub">{{.Cost}}</span>{{else}}<span class="muted">—</span>{{end}}</td>
+        <td class="muted nowrap">{{ago .LastUsed}}</td>
+        <td class="actions"><button type="button" class="ghost small" data-modal="{{$.Base}}tokens/{{.T.ID}}">{{icon "pencil"}}{{T "编辑" "Edit"}}</button></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  {{else}}<p class="empty">{{icon "ticket"}}<span>{{if zh}}还没有令牌，点右上角"创建令牌"。{{else}}No tokens yet. Use "Create a token" above.{{end}}</span></p>{{end}}
+</section>
+{{end}}
+{{end}}
+
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" (T "创建令牌" "Create a token"))}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  <form class="form" id="token-form" hx-post="{{$.Base}}tokens/add" hx-target="#modal-body" hx-swap="innerHTML">
+    {{template "csrf" $.CSRF}}
+    {{template "tokenform" .Form}}
+  </form>
+</div>
+<footer>
+  <span class="push"></span>
+  <button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+  <button type="submit" form="token-form">{{icon "plus"}}{{T "创建" "Create"}}</button>
+</footer>
+{{end}}
+{{end}}

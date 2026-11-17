@@ -1,0 +1,124 @@
+{{/* Full-page fallback (a direct visit to keys/<id>); the panel itself opens the dialog below.
+     On the page the forms post normally; in the dialog htmx posts them and swaps the answer in place. */}}
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead">{{.Row.Key.Provider}} · <code>{{.Row.Masked}}</code></p>
+  <div class="actions"><a role="button" class="ghost" href="{{$.Base}}keys" data-back>{{T "返回 Keys" "Back to Keys"}}</a></div>
+</div>
+<section class="card narrow">
+  <div class="card-body form">{{template "keyform" (dict "D" . "P" $ "Page" true)}}</div>
+  <div class="card-foot btn-row">{{template "keyactions" (dict "D" . "P" $)}}</div>
+</section>
+{{end}}
+{{end}}
+
+{{/* The per-key dialog: state, edit form, reveal, delete. Loaded by
+     [data-modal="keys/<id>"] and swapped in place by the htmx forms. */}}
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" .Row.Key.DisplayName "Meta" .Row.Key.Provider)}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  {{template "keyform" (dict "D" . "P" $)}}
+</div>
+<footer>{{template "keyactions" (dict "D" . "P" $)}}</footer>
+{{end}}
+{{end}}
+
+{{define "keyform"}}
+{{$d := .D}}{{$p := .P}}{{$k := $d.Row.Key}}{{$v := $d.Row.View}}{{$page := .Page}}
+<dl class="kv facts">
+  <dt>Key</dt>
+  <dd>
+    {{if $d.Revealed}}<div class="copyline"><code class="secret" data-copy>{{$d.Revealed}}</code><button type="button" class="ghost" data-copy-target>{{icon "copy"}}{{T "复制" "Copy"}}</button></div>
+      <span class="muted small">{{T "本次查看已记入审计日志" "This reveal was written to the audit log"}}</span>
+    {{else}}<code>{{$d.Row.Masked}}</code>
+      <form class="inline" method="post" action="{{$p.Base}}keys/{{$k.ID}}/reveal"{{if not $page}} hx-post="{{$p.Base}}keys/{{$k.ID}}/reveal" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+        <input type="hidden" name="csrf" value="{{$p.CSRF}}">
+        <button type="submit" class="link small">{{icon "eye"}}{{T "显示完整 key" "Show the full key"}}</button>
+      </form>
+    {{end}}
+  </dd>
+  <dt>{{T "状态" "Status"}}</dt>
+  <dd>{{template "keystatus" $v}}{{if $v.Reason}} {{$v.Reason}}{{end}}{{if not $v.Until.IsZero}} · {{if zh}}{{until $v.Until}}恢复{{else}}resumes {{until $v.Until}}{{end}}{{end}}</dd>
+  <dt>{{T "额度" "Quota"}}</dt>
+  <dd>{{template "quota" $v}}</dd>
+  <dt>{{T "本期" "This period"}}</dt>
+  <dd>{{if zh}}{{dt $v.PeriodResetAt}} 重置{{else}}resets {{dt $v.PeriodResetAt}}{{end}}{{if not $v.LastSyncedAt.IsZero}} · {{T "上次同步" "last synced"}} {{ago $v.LastSyncedAt}}{{end}}{{if $v.SyncError}} · <span class="err">{{T "检查失败：" "Check failed: "}}{{$v.SyncError}}</span>{{end}}</dd>
+  <dt>{{T "最近使用" "Last used"}}</dt>
+  <dd>{{ago $v.LastUsedAt}}</dd>
+</dl>
+
+<form class="form" id="key-form" method="post" action="{{$p.Base}}keys/{{$k.ID}}"{{if not $page}} hx-post="{{$p.Base}}keys/{{$k.ID}}" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  <input type="hidden" name="csrf" value="{{$p.CSRF}}">
+  <div class="fields three">
+    <label class="field"><span class="field-label">{{T "名称" "Name"}}</span>
+      <input type="text" name="label" value="{{$k.Label}}" maxlength="64">
+    </label>
+    <label class="field"><span class="field-label">{{T "套餐" "Plan"}}</span>
+      <select name="plan">
+        <option value="free"{{if eq $k.Plan "free"}} selected{{end}}>{{T "免费" "Free"}}</option>
+        <option value="paid"{{if eq $k.Plan "paid"}} selected{{end}}>{{T "付费" "Paid"}}</option>
+      </select>
+    </label>
+    <label class="field"><span class="field-label">{{T "重置日" "Reset day"}}</span>
+      <input type="number" name="reset_day" value="{{$k.ResetDay}}" min="1" max="28">
+      <small>{{T "每月几号重置额度" "Day of the month the quota resets"}}</small>
+    </label>
+  </div>
+  <div class="fields four">
+    <label class="field"><span class="field-label">{{T "优先级" "Priority"}}</span>
+      <input type="number" name="priority" value="{{$k.Priority}}" min="0" max="100">
+      <small>{{T "数字越大越靠后用" "Higher numbers are used later"}}</small>
+    </label>
+    <label class="field"><span class="field-label">{{T "权重" "Weight"}}</span>
+      <input type="number" name="weight" value="{{if $k.Weight}}{{$k.Weight}}{{else}}1{{end}}" min="0.001" max="1000" step="any">
+      <small>{{T "同优先级内按比例分配" "Share within one priority"}}</small>
+    </label>
+    <label class="field"><span class="field-label">{{T "月度预算" "Monthly budget"}}</span>
+      <input type="number" name="budget_monthly" value="{{if $k.BudgetMonthly}}{{$k.BudgetMonthly}}{{end}}" min="0" step="any" placeholder="{{T "不限" "unlimited"}}">
+      <small>{{if eq $k.Provider "exa"}}{{T "美元" "USD"}}{{else}}credits{{end}}</small>
+    </label>
+    <label class="field"><span class="field-label">{{T "限速" "Rate limit"}}</span>
+      <input type="number" name="rate_limit" value="{{if $k.RateLimit}}{{$k.RateLimit}}{{end}}" min="0" step="any" placeholder="{{T "默认" "default"}}">
+      <small>{{if eq $k.Provider "exa"}}{{T "/search 的 QPS，默认 10" "QPS of /search, default 10"}}{{else}}{{T "每分钟请求数" "Requests per minute"}}{{end}}</small>
+    </label>
+  </div>
+  {{if eq $k.Provider "exa"}}
+  <label class="field"><span class="field-label">{{T "团队" "Team"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+    <input type="text" name="team" value="{{$k.Team}}" maxlength="64">
+    <small>{{T "同一 Exa 账号下的 key 填同一个值，共用团队限速和余额" "Give the keys of one Exa account the same value: they share the team's rate limit and balance"}}</small>
+  </label>
+  {{end}}
+  {{if $k.Egress.Inline}}<p class="hint">{{if zh}}当前是手填的出口（{{$k.Egress.Label}}）：不改动它就选"保持当前手填的出口"。{{else}}This key uses a typed-in proxy ({{$k.Egress.Label}}): keep the first option to leave it as it is.{{end}}</p>{{end}}
+  {{template "egresspicker" (dict "Options" $d.Egress "Current" $d.EgressSel)}}
+  <div class="fields three">
+    <label class="field"><span class="field-label">{{T "地区" "Region"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+      <input type="text" name="region" value="{{$k.Region}}" maxlength="32" placeholder="HK">
+    </label>
+    <label class="field"><span class="field-label">{{T "备注" "Note"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+      <input type="text" name="note" value="{{$k.Note}}" maxlength="500">
+    </label>
+    <div class="field"><span class="field-label">{{T "状态" "Status"}}</span>
+      <label class="choice"><input type="checkbox" role="switch" name="enabled"{{if $k.Enabled}} checked{{end}}>{{T "启用" "Enabled"}}</label>
+    </div>
+  </div>
+</form>
+
+<form method="post" action="{{$p.Base}}keys/batch" id="key-ops" hidden>
+  <input type="hidden" name="csrf" value="{{$p.CSRF}}">
+  <input type="hidden" name="id" value="{{$k.ID}}">
+</form>
+<p class="hint">{{T "删除后运行状态保留 30 天；重新添加同一个 key 会恢复用量和状态。" "After a delete the runtime state is kept for 30 days; adding the same key again restores its usage and status."}}</p>
+{{end}}
+
+{{/* keyactions: the buttons of the key dialog; they submit the forms above by id. */}}
+{{define "keyactions"}}
+{{$d := .D}}
+<button type="submit" form="key-ops" name="action" value="delete" class="danger ghost" data-confirm="{{T "确定从配置文件中删除这个 key 吗？" "Delete this key from the config file?"}}">{{icon "trash-2"}}{{T "删除" "Delete"}}</button>
+{{if $d.CanSync}}<button type="submit" form="key-ops" name="action" value="sync" class="ghost">{{icon "refresh-cw"}}{{T "同步额度" "Sync quota"}}</button>{{end}}
+<span class="push"></span>
+<button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+<button type="submit" form="key-form">{{icon "check"}}{{T "保存" "Save"}}</button>
+{{end}}

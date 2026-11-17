@@ -1,0 +1,22 @@
+# 下游访问令牌：agent / SDK 调用网关时使用的凭据（不是上游 key）
+#
+# 推荐在管理面板创建令牌（明文只显示一次）。也可以手工添加：写一行 token: <明文>
+# （至少 20 个字符），网关读取后会自动改写为 token_hash，磁盘上不保留明文。
+#
+# 字段：
+#   name           名称（唯一）
+#   providers      允许使用的服务：[tavily, exa]，默认全部
+#   surfaces       允许的入口：[mcp, rest]，默认全部
+#   tools          允许的工具名，默认全部
+#   key_group      可使用的上游 key：all | free | paid，默认 all
+#   ip_allowlist   允许的来源 IP 或网段，默认不限制
+#   expires        过期时间，例如 2027-01-01；默认不过期
+#   enabled        默认 true
+#   limits         rpm（每分钟请求数）、concurrency（并发）、daily_requests、monthly_requests、
+#                  monthly_credits（Tavily）、monthly_usd（Exa）；0 表示不限制
+tokens:
+  # - name: claude-laptop
+  #   token: 在这里写至少20个字符的随机字符串
+  #   providers: [tavily, exa]
+  #   limits:
+  #     rpm: 60

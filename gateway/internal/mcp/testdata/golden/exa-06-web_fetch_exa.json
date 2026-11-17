@@ -1,0 +1,33 @@
+{
+  "tool": "web_fetch_exa",
+  "arguments": {
+    "urls": [
+      "https://go.dev/doc/go1.27"
+    ],
+    "maxCharacters": 400
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "result": {
+        "_meta": {
+          "ai.exa/usage": {
+            "costDollars": 0.001
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "# Go 1.27 Release Notes - The Go Programming Language\nURL: https://go.dev/doc/go1.27\n\nGo 1.27 Release Notes - The Go Programming Language\n\n# Go 1.27 Release Notes\n\n## Introduction to Go 1.27\n\nThe latest Go release, version 1.27, arrives in August 2026, six months after Go 1.26. Most of its changes are in the implementation of the toolchain, runtime, and libraries. As always, the release maintains the Go 1 promise of compatibility. We expect almost all Go programs to continue to com",
+            "_meta": {
+              "searchTime": 7.240759000182152
+            }
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 106
+    }
+  ]
+}

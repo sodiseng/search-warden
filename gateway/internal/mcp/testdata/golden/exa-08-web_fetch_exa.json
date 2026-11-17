@@ -1,0 +1,25 @@
+{
+  "tool": "web_fetch_exa",
+  "arguments": {
+    "urls": [
+      "https://this-domain-does-not-exist-warden.invalid/"
+    ]
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error fetching URL(s): https://this-domain-does-not-exist-warden.invalid/: CRAWL_UNKNOWN_ERROR"
+          }
+        ],
+        "isError": true
+      },
+      "jsonrpc": "2.0",
+      "id": 108
+    }
+  ]
+}

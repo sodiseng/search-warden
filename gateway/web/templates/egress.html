@@ -1,0 +1,96 @@
+{{/* Full-page fallback (a direct visit to egresses/<name>); the panel opens the dialog below. */}}
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead"><code>{{.Row.URL}}</code></p>
+  <div class="actions"><a role="button" class="ghost" href="{{$.Base}}egresses" data-back>{{T "返回出口" "Back to Egresses"}}</a></div>
+</div>
+<section class="card narrow">
+  <div class="card-body form">{{template "egressbody" (dict "D" . "P" $ "Page" true)}}</div>
+  <div class="card-foot btn-row">{{template "egressactions" (dict "D" . "P" $)}}</div>
+</section>
+{{end}}
+{{end}}
+
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" .Row.Node.Name "Meta" (T "出口节点" "egress node"))}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  {{template "egressbody" (dict "D" . "P" $)}}
+</div>
+<footer>{{template "egressactions" (dict "D" . "P" $)}}</footer>
+{{end}}
+{{end}}
+
+{{define "egressbody"}}
+{{$d := .D}}{{$p := .P}}{{$n := $d.Row.Node}}{{$page := .Page}}
+<dl class="kv facts">
+  <dt>{{T "地址" "Address"}}</dt><dd><code>{{$d.Row.URL}}</code></dd>
+  <dt>{{T "状态" "Status"}}</dt><dd>{{if $d.Row.View.Health}}{{template "health" $d.Row.View.Health}}{{end}}{{if $d.Row.View.LatencyMS}} · {{ms $d.Row.View.LatencyMS}}{{end}}{{if $d.Row.View.LastError}} · <span class="err">{{$d.Row.View.LastError}}</span>{{end}}{{if not $d.Row.View.LastChecked.IsZero}} · {{T "检查于" "checked"}} {{ago $d.Row.View.LastChecked}}{{end}}
+    <form method="post" action="{{$p.Base}}egresses/test" class="inline">
+      {{template "csrf" $p.CSRF}}<input type="hidden" name="id" value="{{$d.Row.ID}}"><input type="hidden" name="name" value="{{$n.Name}}">
+      <button type="submit" class="link small">{{icon "play"}}{{T "立即测试" "Test now"}}</button>
+    </form></dd>
+  <dt>{{T "出口 IP" "Exit IP"}}</dt><dd>{{if $d.Row.View.ExitIP}}{{$d.Row.View.ExitIP}}{{else}}<span class="muted">{{T "未知" "unknown"}}</span>{{end}}{{if $d.Row.DupWith}} <span class="warn">{{if zh}}与 {{join $d.Row.DupWith "、"}} 相同{{else}}same as {{join $d.Row.DupWith ", "}}{{end}}</span>{{end}}</dd>
+  <dt>{{T "绑定的 key" "Keys"}}</dt><dd>{{if $d.Row.Keys}}{{join $d.Row.Keys (T "、" ", ")}}{{else}}<span class="muted">{{T "无" "none"}}</span>{{end}}{{if $d.Row.OverMax}} <span class="badge err">{{T "超过上限" "Over the limit"}}</span>{{end}}</dd>
+</dl>
+
+<form class="form" id="egress-form" method="post" action="{{$p.Base}}egresses/{{$n.Name}}"{{if not $page}} hx-post="{{$p.Base}}egresses/{{$n.Name}}" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  {{template "csrf" $p.CSRF}}
+  <label class="field"><span class="field-label">{{T "新的代理地址" "New proxy address"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+    <input type="text" name="url" autocomplete="off" spellcheck="false" placeholder="{{T "留空保持不变" "Blank keeps the current one"}}">
+    <small>{{T "改地址后，绑定这个节点的 key 自动改走新地址，引用关系不变。" "After a change, the keys bound to this node use the new address; their references stay the same."}}</small>
+  </label>
+  <div class="fields three">
+    <label class="field"><span class="field-label">{{T "最多绑定的 key 数" "Key limit"}}</span>
+      <input type="number" name="max_keys" value="{{if $n.MaxKeys}}{{$n.MaxKeys}}{{end}}" min="0" placeholder="{{T "不提示" "no warning"}}">
+      <small>{{T "超过时提示关联风险" "Above it the panel warns that keys can be linked"}}</small>
+    </label>
+    <label class="field"><span class="field-label">{{T "地区" "Region"}}</span><input type="text" name="region" value="{{$n.Region}}" placeholder="HK"></label>
+    <label class="field"><span class="field-label">{{T "标签" "Tags"}}</span><input type="text" name="tags" value="{{join $n.Tags ", "}}" placeholder="{{T "逗号分隔" "comma-separated"}}"></label>
+  </div>
+  <div class="fields">
+    <label class="field"><span class="field-label">{{T "备注" "Note"}} <span class="opt">{{T "可选" "optional"}}</span></span><input type="text" name="note" value="{{$n.Note}}"></label>
+    <div class="field"><span class="field-label">{{T "状态" "Status"}}</span>
+      <label class="choice"><input type="checkbox" role="switch" name="enabled"{{if $n.Enabled}} checked{{end}}>{{T "启用（停用后绑定它的 key 暂停使用）" "Enabled (when off, the keys bound to it are paused)"}}</label>
+    </div>
+  </div>
+</form>
+
+<p class="section-title">{{T "重命名" "Rename"}}</p>
+<form class="form" method="post" action="{{$p.Base}}egresses/{{$n.Name}}/rename"{{if not $page}} hx-post="{{$p.Base}}egresses/{{$n.Name}}/rename" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  {{template "csrf" $p.CSRF}}
+  <div class="inline-field">
+    <input type="text" name="to" value="{{$n.Name}}" pattern="[A-Za-z0-9._\-]{1,64}" required aria-label="{{T "新名称" "New name"}}">
+    <button type="submit" class="ghost">{{T "重命名" "Rename"}}</button>
+  </div>
+  <p class="hint">{{T "所有引用这个节点的 key 会在同一次保存中改成新名字。" "Every key that references this node is updated to the new name in the same save."}}</p>
+</form>
+
+<p class="section-title">{{T "删除" "Delete"}}</p>
+<form class="form" id="egress-delete" method="post" action="{{$p.Base}}egresses/{{$n.Name}}/delete"{{if not $page}} hx-post="{{$p.Base}}egresses/{{$n.Name}}/delete" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  {{template "csrf" $p.CSRF}}
+  {{if $d.Row.Keys}}
+  <p class="hint">{{if zh}}还有 {{len $d.Row.Keys}} 个 key 在使用这个出口。删除后它们：{{else}}{{len $d.Row.Keys}} keys still use this egress. After the delete they will:{{end}}</p>
+  <label class="choice"><input type="radio" name="mode" value="inline" checked>{{T "继续走同一个代理（地址直接写进这些 key）" "keep using the same proxy (its address is written into those keys)"}}</label>
+  {{if $d.Others}}
+  <div class="inline-field">
+    <label class="choice"><input type="radio" name="mode" value="node">{{T "改用节点" "move to the node"}}</label>
+    <select name="target" aria-label="{{T "目标节点" "Target node"}}">{{range $d.Others}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+  </div>
+  {{end}}
+  <label class="choice"><input type="radio" name="mode" value="direct">{{T "改为直连（服务器 IP）" "go direct (the server's IP)"}}</label>
+  {{else}}
+  <p class="hint">{{T "没有 key 在使用这个出口，可以直接删除。" "No key uses this egress; it can simply be deleted."}}</p>
+  {{end}}
+</form>
+{{end}}
+
+{{define "egressactions"}}
+{{$n := .D.Row.Node}}
+<button type="submit" form="egress-delete" class="danger ghost" data-confirm="{{if zh}}确定删除节点 {{$n.Name}} 吗？{{else}}Delete the node {{$n.Name}}?{{end}}">{{icon "trash-2"}}{{T "删除节点" "Delete node"}}</button>
+<span class="push"></span>
+<button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+<button type="submit" form="egress-form">{{icon "check"}}{{T "保存" "Save"}}</button>
+{{end}}

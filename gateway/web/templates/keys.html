@@ -1,0 +1,143 @@
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead">{{if zh}}上游 key 保存在 <code>keys/tavily.yaml</code> 和 <code>keys/exa.yaml</code>，这里的修改都会写回文件。{{else}}Upstream keys live in <code>keys/tavily.yaml</code> and <code>keys/exa.yaml</code>; every change here is written back to them.{{end}}</p>
+  <div class="actions">
+    {{if .CanSync}}
+    <form method="post" action="{{$.Base}}quota/sync" class="inline">
+      {{template "csrf" $.CSRF}}<input type="hidden" name="back" value="keys">
+      <button type="submit" class="ghost">{{icon "refresh-cw"}}{{T "同步 Tavily 额度" "Sync Tavily quota"}}</button>
+    </form>
+    {{end}}
+    <button type="button" data-modal="{{$.Base}}keys/new">{{icon "plus"}}{{T "添加 key" "Add keys"}}</button>
+  </div>
+</div>
+
+<div class="selectable">
+{{range .Groups}}
+<section class="card">
+  <div class="card-head">
+    <h2>{{if eq .Provider "tavily"}}Tavily{{else}}Exa{{end}} <span class="meta">{{if zh}}{{len .Rows}} 个{{else}}{{len .Rows}} keys{{end}}{{if .Stats.Quota}} · {{.Stats.Quota}}{{end}}</span></h2>
+  </div>
+  {{if .Rows}}
+  <div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th class="pick"><input type="checkbox" data-check-all="{{.Provider}}" aria-label="{{T "全选" "Select all"}}"></th>
+      <th>Key</th><th>{{T "套餐" "Plan"}}</th><th>{{T "状态" "Status"}}</th><th>{{T "额度" "Quota"}}</th><th>{{T "出口" "Egress"}}</th><th>{{T "24 小时" "24 h"}}</th><th>{{T "最近使用" "Last used"}}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {{range .Rows}}
+      <tr>
+        <td class="pick"><input type="checkbox" name="id" value="{{.Key.ID}}" form="batch" data-group="{{.Key.Provider}}" aria-label="{{.Key.DisplayName}}"></td>
+        <td><span class="cell-main">{{.Key.DisplayName}}</span><span class="cell-sub"><code>{{.Masked}}</code>{{if .Key.Team}} · team {{.Key.Team}}{{end}}</span></td>
+        <td class="nowrap">{{if eq .Key.Plan "paid"}}<span class="badge plain accent">{{T "付费" "Paid"}}</span>{{else}}<span class="badge plain">{{T "免费" "Free"}}</span>{{end}}{{if or .Key.Priority (and .Key.Weight (ne .Key.Weight 1.0))}}<span class="cell-sub">{{if .Key.Priority}}P{{.Key.Priority}} {{end}}{{if and .Key.Weight (ne .Key.Weight 1.0)}}{{T "权重" "weight"}} {{.Key.Weight}}{{end}}</span>{{end}}</td>
+        <td>{{template "keystatus" .View}}{{if .Reason}}<span class="cell-sub">{{.Reason}}</span>{{end}}{{if not .Until.IsZero}}<span class="cell-sub">{{if zh}}{{until .Until}}恢复{{else}}resumes {{until .Until}}{{end}}</span>{{end}}</td>
+        <td>{{template "quota" .View}}{{if .SyncError}}<span class="cell-sub err">{{T "检查失败：" "Check failed: "}}{{.SyncError}}</span>{{end}}</td>
+        <td>{{.Key.Egress.Label}}{{if .EgressHealth}} {{template "health" .EgressHealth}}{{end}}</td>
+        <td class="nowrap">{{if .Req24}}{{if zh}}{{num .Req24}} 次{{else}}{{num .Req24}} req{{end}}{{if .Err24}}<span class="cell-sub err">{{T "失败" "failed"}} {{pct .Err24 .Req24}}</span>{{end}}{{else}}<span class="muted">—</span>{{end}}</td>
+        <td class="nowrap muted">{{ago .LastUsedAt}}</td>
+        <td class="actions"><button type="button" class="ghost small" data-modal="{{$.Base}}keys/{{.Key.ID}}">{{icon "pencil"}}{{T "编辑" "Edit"}}</button></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  {{else}}<p class="empty">{{icon "key-round"}}<span>{{if zh}}还没有 {{.Provider}} key，点右上角"添加 key"。{{else}}No {{.Provider}} keys yet. Use "Add keys" above.{{end}}</span></p>{{end}}
+</section>
+{{end}}
+
+{{/* Acts on the ticked rows (their checkboxes carry form="batch"). The hidden first
+     button makes Enter in the URL field mean "set egress". */}}
+<form method="post" action="{{$.Base}}keys/batch" id="batch" class="batchbar">
+  {{template "csrf" $.CSRF}}
+  <button type="submit" name="action" value="egress" hidden></button>
+  <span class="count">{{T "对所选 key" "Selected keys"}}<span data-batch-count></span></span>
+  {{if .CanTest}}<button type="submit" name="action" value="test" class="ghost small">{{icon "play"}}{{T "测试" "Test"}}</button>{{end}}
+  {{if .CanSync}}<button type="submit" name="action" value="sync" class="ghost small">{{icon "refresh-cw"}}{{T "同步额度" "Sync quota"}}</button>{{end}}
+  <button type="submit" name="action" value="enable" class="ghost small">{{T "启用" "Enable"}}</button>
+  <button type="submit" name="action" value="disable" class="ghost small">{{T "停用" "Disable"}}</button>
+  <span class="sep"></span>
+  <select name="egress" aria-label="{{T "出口" "Egress"}}">
+    {{range .BatchEgress}}<option value="{{.Value}}">{{.Label}}</option>{{end}}
+  </select>
+  <input type="text" name="egress_url" autocomplete="off" spellcheck="false" placeholder="{{T "或粘贴代理 URL" "or paste a proxy URL"}}" aria-label="{{T "代理 URL" "Proxy URL"}}">
+  <button type="submit" name="action" value="egress" class="ghost small">{{T "设置出口" "Set egress"}}</button>
+  <span class="sep"></span>
+  <button type="submit" name="action" value="delete" class="danger ghost small" data-confirm="{{T "确定从配置文件中删除所选 key 吗？" "Delete the selected keys from the config file?"}}">{{icon "trash-2"}}{{T "删除" "Delete"}}</button>
+</form>
+</div>
+{{end}}
+{{end}}
+
+{{/* The create dialog: one key with pickers, or a batch paste. */}}
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" (T "添加 key" "Add keys"))}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  <div class="tabs">
+    <label><input type="radio" name="keytab" id="tab-one"{{if not .Lines}} checked{{end}}>{{T "单个 key" "One key"}}</label>
+    <label><input type="radio" name="keytab" id="tab-two"{{if .Lines}} checked{{end}}>{{T "批量粘贴" "Paste many"}}</label>
+  </div>
+
+  <form class="form tab-panel one" id="key-one" hx-post="{{$.Base}}keys/add" hx-target="#modal-body" hx-swap="innerHTML">
+    {{template "csrf" $.CSRF}}
+    <label class="field"><span class="field-label">Key</span>
+      <input type="text" name="secret" autocomplete="off" spellcheck="false" placeholder="tvly-dev-…" required>
+      <small>{{if zh}}<code>tvly-</code> 开头按 Tavily 识别，其余按 Exa；已存在的 key 会自动跳过。{{else}}A key starting with <code>tvly-</code> is a Tavily key, anything else an Exa key; keys that already exist are skipped.{{end}}</small>
+    </label>
+    <div class="fields">
+      <label class="field"><span class="field-label">{{T "名称" "Name"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+        <input type="text" name="label" maxlength="64" placeholder="free-01">
+      </label>
+      <label class="field"><span class="field-label">{{T "套餐" "Plan"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+        <select name="plan">
+          <option value="">{{T "文件默认值" "The file's default"}}</option>
+          <option value="free">{{T "免费（free）" "Free"}}</option>
+          <option value="paid">{{T "付费（paid）" "Paid"}}</option>
+        </select>
+      </label>
+      <label class="field"><span class="field-label">{{T "出口" "Egress"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+        <select name="egress">
+          <option value="">{{T "文件默认值（defaults.egress）" "The file's default (defaults.egress)"}}</option>
+          {{range .Egress}}<option value="{{.Value}}">{{.Label}}</option>{{end}}
+        </select>
+      </label>
+      <label class="field"><span class="field-label">{{T "或粘贴代理 URL" "Or paste a proxy URL"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+        <input type="text" name="egress_url" autocomplete="off" spellcheck="false" placeholder="socks5://user:pass@1.2.3.4:1080">
+      </label>
+      <label class="field span"><span class="field-label">{{T "备注" "Note"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+        <input type="text" name="note" maxlength="500" placeholder="{{T "这个 key 的用途" "What this key is for"}}">
+      </label>
+    </div>
+  </form>
+
+  <form class="form tab-panel two" id="key-many" hx-post="{{$.Base}}keys/add" hx-target="#modal-body" hx-swap="innerHTML">
+    {{template "csrf" $.CSRF}}
+    <label class="field"><span class="field-label">{{T "每行一个 key" "One key per line"}}</span>
+      <textarea name="lines" rows="7" class="code" spellcheck="false" autocomplete="off" placeholder="tvly-dev-xxxxxxxx,free-01&#10;exa-key-xxxxxxxx,team-a,hk-res-1,paid">{{.Lines}}</textarea>
+    </label>
+    <ul class="formats">
+      <li><code>key</code></li>
+      <li><code>{{T "key,名称" "key,name"}}</code></li>
+      <li><code>{{T "key,名称,出口" "key,name,egress"}}</code></li>
+      <li><code>{{T "key,名称,出口,套餐" "key,name,egress,plan"}}</code></li>
+    </ul>
+    <p class="hint">{{if zh}}出口可以写节点名或代理 URL；套餐是 <code>free</code> 或 <code>paid</code>（留空用文件默认值）。<code>#</code> 开头的行是注释，已存在的 key 会自动跳过。{{else}}The egress is a node name or a proxy URL; the plan is <code>free</code> or <code>paid</code> (blank = the file's default). Lines starting with <code>#</code> are comments, and keys that already exist are skipped.{{end}}</p>
+    <label class="field"><span class="field-label">{{T "没写出口的行使用" "Egress for lines without one"}}</span>
+      <select name="egress">
+        <option value="">{{T "文件默认值（defaults.egress）" "The file's default (defaults.egress)"}}</option>
+        {{range .Egress}}<option value="{{.Value}}">{{.Label}}</option>{{end}}
+      </select>
+    </label>
+  </form>
+</div>
+<footer>
+  <span class="push"></span>
+  <button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+  <button type="submit" form="key-one" class="tab-panel one">{{icon "plus"}}{{T "添加" "Add"}}</button>
+  <button type="submit" form="key-many" class="tab-panel two">{{icon "plus"}}{{T "添加" "Add"}}</button>
+</footer>
+{{end}}
+{{end}}

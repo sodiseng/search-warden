@@ -1,0 +1,70 @@
+{{define "content"}}
+{{with .Data}}
+<form method="get" action="{{$.Base}}requests" class="card">
+  <div class="card-body filters">
+    <label class="field"><span class="field-label">{{T "服务" "Service"}}</span>
+      <select name="provider">
+        <option value="">{{T "全部" "All"}}</option>
+        <option value="tavily"{{if eq .F.Provider "tavily"}} selected{{end}}>Tavily</option>
+        <option value="exa"{{if eq .F.Provider "exa"}} selected{{end}}>Exa</option>
+      </select>
+    </label>
+    <label class="field"><span class="field-label">{{T "令牌" "Token"}}</span>
+      <select name="token"><option value="">{{T "全部" "All"}}</option>
+        {{range .Tokens}}<option value="{{.Value}}"{{if eq .Value $.Data.F.Token}} selected{{end}}>{{.Label}}</option>{{end}}
+      </select>
+    </label>
+    <label class="field"><span class="field-label">Key</span>
+      <select name="key"><option value="">{{T "全部" "All"}}</option>
+        {{range .Keys}}<option value="{{.Value}}"{{if eq .Value $.Data.F.Key}} selected{{end}}>{{.Label}}</option>{{end}}
+      </select>
+    </label>
+    <label class="field"><span class="field-label">{{T "客户端 IP" "Client IP"}}</span><input type="text" name="ip" value="{{.F.IP}}" spellcheck="false"></label>
+    <label class="field"><span class="field-label">{{T "操作" "Operation"}}</span><input type="text" name="op" value="{{.F.Op}}" placeholder="search" spellcheck="false"></label>
+    <label class="field"><span class="field-label">{{T "状态码" "Status code"}}</span><input type="number" name="status" value="{{if .F.Status}}{{.F.Status}}{{end}}" min="100" max="599"></label>
+    <div class="end">
+      <label class="choice"><input type="checkbox" role="switch" name="errors" value="1"{{if .F.Errors}} checked{{end}}>{{T "只看失败" "Failures only"}}</label>
+      <label class="choice"><input type="checkbox" role="switch" name="live" value="1"{{if .F.Live}} checked{{end}}>{{T "实时刷新" "Live"}}</label>
+      <span class="btn-row push">
+        <a role="button" class="subtle small" href="{{$.Base}}requests">{{T "清除" "Clear"}}</a>
+        <button type="submit" class="small">{{icon "list-filter"}}{{T "筛选" "Filter"}}</button>
+      </span>
+    </div>
+  </div>
+</form>
+
+<section class="card">
+  {{if .NoStore}}<p class="empty">{{icon "database"}}<span>{{T "没有连接数据库。" "No database connected."}}</span></p>{{else}}
+  <div class="table-wrap">
+  <table class="compact">
+    <thead><tr><th>{{T "时间" "Time"}}</th><th>{{T "操作" "Operation"}}</th><th>{{T "令牌" "Token"}}</th><th>{{T "Key / 出口" "Key / egress"}}</th><th>{{T "客户端" "Client"}}</th><th>{{T "状态" "Status"}}</th><th class="num">{{T "耗时" "Time taken"}}</th><th class="num">{{T "费用" "Cost"}}</th><th>{{T "内容" "Query"}}</th></tr></thead>
+    {{template "rows" $}}
+  </table>
+  </div>
+  {{if .Next}}<div class="card-foot"><a href="{{$.Base}}requests?{{.Query}}{{if .Query}}&{{end}}before={{.Next}}">{{T "更早的请求 →" "Older requests →"}}</a></div>{{end}}
+  {{end}}
+</section>
+{{end}}
+{{end}}
+
+{{define "rows"}}
+{{with .Data}}
+<tbody id="rows"{{if .F.Live}} hx-get="{{$.Base}}requests/rows?{{.Query}}{{if .Query}}&{{end}}live=1" hx-trigger="every 3s" hx-swap="outerHTML"{{end}}>
+{{range .Rows}}
+  <tr{{if .Error}} class="row-err"{{end}}>
+    <td class="nowrap"><a href="{{$.Base}}requests/{{.ID}}" data-modal="{{$.Base}}requests/{{.ID}}">{{dt .TS}}</a></td>
+    <td class="nowrap">{{.Provider}}/{{.Operation}}<span class="cell-sub">{{.Surface}}</span></td>
+    <td class="clip">{{.TokenName}}</td>
+    <td class="clip">{{if .KeyLabel}}{{.KeyLabel}}{{else}}<span class="muted">—</span>{{end}}<span class="cell-sub">{{.EgressLabel}}{{if .ExitIP}} · {{.ExitIP}}{{end}}</span></td>
+    <td class="nowrap">{{.ClientIP}}<span class="cell-sub">{{.IPSource}}</span></td>
+    <td class="nowrap"><span class="badge plain {{if .Error}}err{{else}}ok{{end}}">{{.Status}}</span>{{if gt .Attempts 1}} <span class="muted small">×{{.Attempts}}</span>{{end}}{{if .ErrorKind}}<span class="cell-sub err">{{.ErrorKind}}</span>{{end}}</td>
+    <td class="num nowrap">{{ms .LatencyMS}}</td>
+    <td class="num nowrap">{{if .CostCredits}}{{num .CostCredits}} cr{{end}}{{if .CostMicroUSD}}{{usd .CostMicroUSD}}{{end}}{{if .CostEstimated}}<span class="muted small">≈</span>{{end}}</td>
+    <td class="clip fill">{{.QueryPreview}}</td>
+  </tr>
+{{else}}
+  <tr><td colspan="9"><p class="empty">{{icon "inbox"}}<span>{{T "没有符合条件的请求。" "No requests match."}}</span></p></td></tr>
+{{end}}
+</tbody>
+{{end}}
+{{end}}

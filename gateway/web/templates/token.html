@@ -1,0 +1,54 @@
+{{/* Full-page fallback (a direct visit to tokens/<id>); the panel opens the dialog below. */}}
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead"><code>{{.Row.T.Prefix}}…</code></p>
+  <div class="actions"><a role="button" class="ghost" href="{{$.Base}}tokens" data-back>{{T "返回令牌" "Back to Tokens"}}</a></div>
+</div>
+<section class="card narrow">
+  <div class="card-body form">{{template "tokenbody" (dict "D" . "P" $ "Page" true)}}</div>
+  <div class="card-foot btn-row">{{template "tokenactions" (dict "D" . "P" $)}}</div>
+</section>
+{{end}}
+{{end}}
+
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" .Row.T.Name "Meta" (T "令牌" "token"))}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  {{template "tokenbody" (dict "D" . "P" $)}}
+</div>
+<footer>{{template "tokenactions" (dict "D" . "P" $)}}</footer>
+{{end}}
+{{end}}
+
+{{define "tokenbody"}}
+{{$d := .D}}{{$p := .P}}{{$t := $d.Row.T}}{{$u := $d.Row.Use}}{{$page := .Page}}
+<dl class="kv facts">
+  <dt>{{T "前缀" "Prefix"}}</dt><dd><code>{{$t.Prefix}}…</code> <span class="muted small">{{T "明文不保存，忘记了只能轮换" "The token itself is not stored; if it is lost, rotate it"}}</span></dd>
+  <dt>{{T "状态" "Status"}}</dt><dd>{{if $d.Row.Expired}}<span class="badge err">{{T "已过期" "Expired"}}</span>{{else if $t.Enabled}}<span class="badge ok">{{T "启用" "Enabled"}}</span>{{else}}<span class="badge">{{T "已停用" "Disabled"}}</span>{{end}}{{if not $t.Expires.IsZero}} <span class="muted small">{{if zh}}{{day $t.Expires}} 过期{{else}}expires {{day $t.Expires}}{{end}}</span>{{end}}</dd>
+  <dt>{{T "30 天用量" "Last 30 days"}}</dt><dd>{{if zh}}{{num $d.Row.Requests}} 次{{if $d.Row.Errors}}，失败 {{pct $d.Row.Errors $d.Row.Requests}}{{end}}{{else}}{{num $d.Row.Requests}} requests{{if $d.Row.Errors}}, {{pct $d.Row.Errors $d.Row.Requests}} failed{{end}}{{end}}{{if $d.Row.Cost}} · {{$d.Row.Cost}}{{end}} · <a href="{{$p.Base}}requests?token={{$t.ID}}">{{T "查看请求" "View requests"}}</a></dd>
+  <dt>{{T "最近使用" "Last used"}}</dt><dd>{{ago $d.Row.LastUsed}}</dd>
+  <dt>{{T "限额计数" "Limit counters"}}</dt><dd>{{if zh}}今天 {{num $u.DayRequests}} 次{{with $t.Limits.DailyRequests}} / {{num .}}{{end}} · 本月 {{num $u.MonthRequests}} 次{{with $t.Limits.MonthlyRequests}} / {{num .}}{{end}}{{else}}today {{num $u.DayRequests}}{{with $t.Limits.DailyRequests}} / {{num .}}{{end}} · this month {{num $u.MonthRequests}}{{with $t.Limits.MonthlyRequests}} / {{num .}}{{end}}{{end}} · {{num $u.MonthCredits}} credits{{with $t.Limits.MonthlyCredits}} / {{num .}}{{end}} · {{usd $u.MonthMicroUSD}}{{if $t.Limits.MonthlyUSD}} / ${{$t.Limits.MonthlyUSD}}{{end}} · {{T "进行中" "in flight"}} {{$u.InFlight}}{{with $t.Limits.Concurrency}} / {{.}}{{end}} <span class="muted small">(UTC)</span></dd>
+</dl>
+
+<form class="form" id="token-form" method="post" action="{{$p.Base}}tokens/{{$t.ID}}"{{if not $page}} hx-post="{{$p.Base}}tokens/{{$t.ID}}" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  <input type="hidden" name="csrf" value="{{$p.CSRF}}">
+  {{template "tokenform" $d.Form}}
+</form>
+
+<form id="token-toggle" method="post" action="{{$p.Base}}tokens/{{$t.ID}}/toggle"{{if not $page}} hx-post="{{$p.Base}}tokens/{{$t.ID}}/toggle" hx-target="#modal-body" hx-swap="innerHTML"{{end}} hidden><input type="hidden" name="csrf" value="{{$p.CSRF}}"></form>
+<form id="token-rotate" method="post" action="{{$p.Base}}tokens/{{$t.ID}}/rotate"{{if not $page}} hx-post="{{$p.Base}}tokens/{{$t.ID}}/rotate" hx-target="#modal-body" hx-swap="innerHTML"{{end}} hidden><input type="hidden" name="csrf" value="{{$p.CSRF}}"></form>
+<form id="token-delete" method="post" action="{{$p.Base}}tokens/{{$t.ID}}/delete"{{if not $page}} hx-post="{{$p.Base}}tokens/{{$t.ID}}/delete" hx-target="#modal-body" hx-swap="innerHTML"{{end}} hidden><input type="hidden" name="csrf" value="{{$p.CSRF}}"></form>
+{{end}}
+
+{{define "tokenactions"}}
+{{$t := .D.Row.T}}
+<button type="submit" form="token-delete" class="danger ghost" data-confirm="{{if zh}}确定删除令牌 {{$t.Name}} 吗？使用它的请求会立即被拒绝。{{else}}Delete the token {{$t.Name}}? Requests that use it are refused at once.{{end}}">{{icon "trash-2"}}{{T "删除" "Delete"}}</button>
+<button type="submit" form="token-rotate" class="ghost" data-confirm="{{T "轮换后旧令牌立即失效，使用它的 agent 需要换成新令牌。确定轮换吗？" "After a rotation the old token stops working at once, and the agents that use it need the new one. Rotate it?"}}">{{icon "rotate-cw"}}{{T "轮换" "Rotate"}}</button>
+<button type="submit" form="token-toggle" class="ghost">{{icon "power"}}{{if $t.Enabled}}{{T "停用" "Disable"}}{{else}}{{T "启用" "Enable"}}{{end}}</button>
+<span class="push"></span>
+<button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+<button type="submit" form="token-form">{{icon "check"}}{{T "保存" "Save"}}</button>
+{{end}}

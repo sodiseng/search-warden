@@ -1,0 +1,28 @@
+{{define "content"}}
+<div class="page-head">
+  <p class="lead">{{T "这些文件是配置的唯一来源，面板上的修改都写回这里；也可以直接编辑，保存时做同样的校验和冲突检测，写错不会生效。" "These files are the only source of configuration: the panel writes every change back to them. They can be edited directly too, with the same validation and conflict check on save, and a broken file never takes effect."}}</p>
+  <div class="actions">
+    <form method="post" action="{{.Base}}files/export" class="inline">{{template "csrf" .CSRF}}
+      <button type="submit" class="ghost" data-confirm="{{T "导出的 zip 包含明文上游 key 和代理密码，确定导出吗？（会记入审计日志）" "The zip contains upstream keys and proxy passwords in clear text. Export it? (This is written to the audit log.)"}}">{{icon "download"}}{{T "导出全部（zip）" "Export all (zip)"}}</button></form>
+  </div>
+</div>
+<section class="card">
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>{{T "文件" "File"}}</th><th>{{T "状态" "Status"}}</th><th>{{T "版本" "Version"}}</th><th>{{T "检查于" "Checked"}}</th><th></th></tr></thead>
+    <tbody>
+    {{range .Data}}
+      <tr>
+        <td><span class="cell-main"><code>{{.File}}</code></span></td>
+        <td>{{if .Applied}}<span class="badge ok">{{T "已生效" "Applied"}}</span>{{else}}<span class="badge err">{{T "有未生效的修改" "Not applied"}}</span>{{end}}</td>
+        <td><code>{{.Version}}</code>{{if ne .Version .DiskVersion}} <span class="muted small">{{T "磁盘上" "on disk"}} {{.DiskVersion}}</span>{{end}}</td>
+        <td class="muted nowrap">{{ago .CheckedAt}}</td>
+        <td class="actions"><a role="button" class="ghost small" href="{{$.Base}}files/edit?f={{.File}}" data-modal="{{$.Base}}files/edit?f={{.File}}">{{icon "pencil"}}{{T "编辑" "Edit"}}</a></td>
+      </tr>
+      {{if .Errors}}<tr class="detail"><td colspan="5">{{template "fileerrors" .Errors}}</td></tr>{{end}}
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+</section>
+{{end}}

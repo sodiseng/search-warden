@@ -1,0 +1,36 @@
+{
+  "tool": "tavily_map",
+  "arguments": {
+    "url": "https://go.dev/doc/",
+    "max_depth": 1,
+    "limit": 3
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "jsonrpc": "2.0",
+      "id": 102,
+      "result": {
+        "content": [
+          {
+            "text": "{\"base_url\":\"https://go.dev/doc/\",\"results\":[\"https://go.dev/doc\",\"https://go.dev/help\",\"https://go.dev/project\"],\"response_time\":0.14,\"request_id\":\"efcbfbf5-f10e-48e9-9a12-da13a191d682\",\"auth_mode\":\"keyed\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "base_url": "https://go.dev/doc/",
+          "results": [
+            "https://go.dev/doc",
+            "https://go.dev/help",
+            "https://go.dev/project"
+          ],
+          "response_time": 0.14,
+          "request_id": "efcbfbf5-f10e-48e9-9a12-da13a191d682",
+          "auth_mode": "keyed"
+        }
+      }
+    }
+  ]
+}

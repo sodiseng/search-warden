@@ -1,0 +1,35 @@
+{
+  "tool": "web_search_advanced_exa",
+  "arguments": {
+    "query": "Go 1.27 release notes",
+    "numResults": 2,
+    "includeDomains": [
+      "go.dev"
+    ],
+    "enableHighlights": true
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "result": {
+        "_meta": {
+          "ai.exa/usage": {
+            "costDollars": 0.007
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"requestId\":\"c365b8fab1c59cf89cef3ddce6165b96\",\"resolvedSearchType\":\"\",\"results\":[{\"id\":\"https://go.dev/doc/go1.27\",\"url\":\"https://go.dev/doc/go1.27\",\"image\":\"https://go.dev/doc/gopher/gopher5logo.jpg\",\"title\":\"Go 1.27 Release Notes - The Go Programming Language\",\"highlights\":[\"# Go 1.27 Release Notes\\n\\n## Introduction to Go 1.27\\n\\nThe latest Go release, version 1.27, arrives in August 2026, six months after Go 1.26. Most of its changes are in the implementation of the toolchain, runtime, and libraries. As always, the release maintains the Go 1 promise of compatibility. We expect almost all Go programs to continue to compile and run as before.\\n\\n## Changes to the language\\n\\nGo 1.27 now supports generic methods: a method declaration may declare its own type parameters. This widely anticipated change allows adding generic functions within the namespace of a particular data type where before one had to declare such functions with a scope of the entire package. As an example, `math/rand/v2` now also declares a generic method with signature `(*Rand) N[Int intType](Int) Int`, whereas previously it had just a generic function `N[Int intType](Int) Int` (see below for details). Note that methods of interfaces may not declare type parameters nor can interface methods be implemented by generic methods.\\n\\nA key in a struct literal may now be any valid field selector for the struct type, not just a (top-level) field name of the struct.\\n\\nFunction type inference has been generalized to apply in all\\n\\n...\\n\\n## Tools\\n\\nResponse file (`@file`) parsing is now supported for the `compile`, `link`, `asm`, `cgo`, `cover`, and `pack` tools. The response file contains whitespace-separated arguments with support for single-quoted and double-quoted strings, escape sequences, and backslash-newline line continuation. The format is compatible with GCC’s response file implementation to ensure interoperability with existing build systems.\\n\\n...\\n\\n### New encoding/json/v2 and encoding/json/jsontext packages\\n\\nTwo new packages are now available:\\n\\n- The `encoding/json/v2` package is a major revision of `encoding/json`. It provides `Marshal`, `MarshalWrite`, `MarshalEncode`, `Unmarshal`, `UnmarshalRead`, and `UnmarshalDecode`, all of which accept variadic `Options` arguments to configure marshaling and unmarshaling behavior.\\n- The `encoding/json/jsontext` package provides lower-level syntactic processing of JSON. The `Encoder` and `Decoder` types operate on JSON as a sequence of `Token` and `Value`, maintaining a state machine to ensure the produced or consumed sequence is valid JSON text.\\n\\n...\\n\\n### Darwin\\n\\nAs announced in the Go 1.26 release notes, Go 1.27 requires macOS 13 Ventura or later; support for previous versions has been discontinued.\"]},{\"id\":\"https://go.dev/blog/go1.27\",\"url\":\"https://go.dev/blog/go1.27\",\"publishedDate\":\"2026-08-19T00:00:00.000Z\",\"author\":\"Nicholas Husin, on behalf of the Go team\",\"image\":\"https://go.dev/doc/gopher/gopher5logo.jpg\",\"title\":\"Go 1.27 is released - The Go Programming Language\",\"highlights\":[\"# Go 1.27 is released\\n\\n Nicholas Husin, on behalf of the Go team 19 August 2026 \\n\\nToday the Go team is pleased to release Go 1.27. You can find its binary archives and installers on the download page.\\n\\nGo 1.27 brings major enhancements across the language, toolchain, runtime, and standard library. Below are some of the key highlights.\\n\\n## Language changes\\n\\nGo 1.27 introduces three notable updates to the language specification.\\n\\nFirst, generic methods are now supported. For example, see `math/rand/v2.Rand`:\\n\\n```go\\n// Prior to Go 1.27, a separate method on Rand had to be added for each type\\n// (unsigned integer methods omitted for brevity).\\nfunc (r *Rand) Int32N(n int32) int32\\nfunc (r *Rand) Int64N(n int64) int64\\nfunc (r *Rand) IntN(n int) int\\n\\n// Go 1.27 adds a new generic method that works for all integer types.\\nfunc (r *Rand) N[Int intType](n Int) Int\\n\\n```\\n\\nSecond, a key in a struct literal may now be any valid field selector for the struct type, allowing fields in nested or embedded structs to be initialized directly:\\n\\n...\\n\\nHabitat // Embedded struct.\\n\\n...\\n\\n## Tool improvements\\n\\n- `go fix` includes several new modernizers: `atomictypes`, `embedlit`, `slicesbackward`, and `unsafefuncs`.\\n- `go doc` now supports `package@version` queries such as `go doc example.com/pkg@v1.2.3`.\\n- `go mod tidy` now automatically consolidates multiple `require` blocks in `go.mod` into a standard direct and indirect two-block structure.\\n\\n## Performance and runtime\\n\\n- Size-specialized memory allocation reduces small object (<80B) allocation costs by up to 30%, improving overall performance by ~1% for allocation-heavy programs.\\n- The `goroutineleak` profile in `runtime/pprof` is now generally available, allowing automatic detection of permanently blocked goroutines.\\n\\n## Standard library additions\\n\\n- `encoding/json/v2` provides high-level JSON processing with configurable options and stricter defaults, alongside `encoding/json/jsontext` for low-level streaming. The existing `encoding/json` package is now backed by the v2 implementation for faster unmarshaling while maintaining backwards compatibility.\\n- `crypto/mldsa` implements the post-quantum ML-DSA signature scheme (FIPS 204), integrated into `crypto/x509` and `crypto/tls`.\\n- `uuid` provides native support for generating and parsing UUIDs.\\n- `simd` and architecture-specific `simd/archsimd` provide experimental SIMD support.\\n- `net/http/httptest` adds `NewTestServer`, providing an in-memory fake network suitable for use with the `testing/synctest` package.\"]}],\"searchTime\":988.9,\"costDollars\":{\"total\":0.007,\"search\":{\"neural\":0.007}}}",
+            "_meta": {
+              "searchTime": 988.9
+            }
+          }
+        ]
+      },
+      "jsonrpc": "2.0",
+      "id": 107
+    }
+  ]
+}

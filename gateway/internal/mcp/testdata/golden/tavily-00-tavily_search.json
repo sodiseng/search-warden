@@ -1,0 +1,51 @@
+{
+  "tool": "tavily_search",
+  "arguments": {
+    "query": "Go 1.27 release notes",
+    "max_results": 2
+  },
+  "http_status": "HTTP/1.1 200 OK",
+  "content_type": "text/event-stream",
+  "messages": [
+    {
+      "jsonrpc": "2.0",
+      "id": 100,
+      "result": {
+        "content": [
+          {
+            "text": "{\"query\":\"Go 1.27 release notes\",\"follow_up_questions\":null,\"answer\":null,\"images\":[],\"results\":[{\"url\":\"https://go.dev/doc/go1.27\",\"title\":\"Go 1.27 Release Notes - The Go Programming Language\",\"content\":\"Go 1.27 continues the experimental support for SIMD operations in the `simd/archsimd` package that began in Go 1.26. This release revises the amd64 API and adds support for arm64 “Neon” 128-bit SIMD and WebAssembly 128-bit SIMD. The `simd/archsimd` package is enabled by setting the environment variable `GOEXPERIMENT=simd` at build time. [...] The latest Go release, version 1.27, arrives in August 2026, six months after Go 1.26. Most of its changes are in the implementation of the toolchain, runtime, and libraries. As always, the release maintains the Go 1 promise of compatibility. We expect almost all Go programs to continue to compile and run as before.\\n\\n## Changes to the language¶ [...] #### `unicode`¶\\n\\nThe unicode package and associated support throughout the system have been upgraded from Unicode 15 to Unicode 17. See the Unicode 16.0.0 and Unicode 17.0.0 release notes for information about the changes.\\n\\n## Ports¶\\n\\n### Darwin¶\\n\\nAs announced in the Go 1.26 release notes, Go 1.27 requires macOS 13 Ventura or later; support for previous versions has been discontinued.\\n\\n### PowerPC¶\",\"score\":0.90633047,\"raw_content\":null,\"id\":\"b5edfd-00\"},{\"url\":\"https://asacrew.medium.com/go-1-27-is-becoming-shockingly-good-da67d67b636c\",\"title\":\"Go 1.27 is becoming shockingly good\",\"content\":\"Go 1.27 introduces size-specialized memory-allocation routines for objects smaller than 80 bytes.\\n\\nThe release notes report that this can reduce the cost of qualifying allocations by as much as 30%. The expected improvement for real, allocation-heavy applications is approximately 1% overall.\",\"score\":0.9020676,\"raw_content\":null,\"id\":\"9dad3a-01\"}],\"response_time\":0.97,\"request_id\":\"0aa9aa9b-6c5b-42de-bb69-ab5d0cf04bd1\",\"auth_mode\":\"keyed\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "structuredContent": {
+          "query": "Go 1.27 release notes",
+          "follow_up_questions": null,
+          "answer": null,
+          "images": [],
+          "results": [
+            {
+              "url": "https://go.dev/doc/go1.27",
+              "title": "Go 1.27 Release Notes - The Go Programming Language",
+              "content": "Go 1.27 continues the experimental support for SIMD operations in the `simd/archsimd` package that began in Go 1.26. This release revises the amd64 API and adds support for arm64 “Neon” 128-bit SIMD and WebAssembly 128-bit SIMD. The `simd/archsimd` package is enabled by setting the environment variable `GOEXPERIMENT=simd` at build time. [...] The latest Go release, version 1.27, arrives in August 2026, six months after Go 1.26. Most of its changes are in the implementation of the toolchain, runtime, and libraries. As always, the release maintains the Go 1 promise of compatibility. We expect almost all Go programs to continue to compile and run as before.\n\n## Changes to the language¶ [...] #### `unicode`¶\n\nThe unicode package and associated support throughout the system have been upgraded from Unicode 15 to Unicode 17. See the Unicode 16.0.0 and Unicode 17.0.0 release notes for information about the changes.\n\n## Ports¶\n\n### Darwin¶\n\nAs announced in the Go 1.26 release notes, Go 1.27 requires macOS 13 Ventura or later; support for previous versions has been discontinued.\n\n### PowerPC¶",
+              "score": 0.90633047,
+              "raw_content": null,
+              "id": "b5edfd-00"
+            },
+            {
+              "url": "https://asacrew.medium.com/go-1-27-is-becoming-shockingly-good-da67d67b636c",
+              "title": "Go 1.27 is becoming shockingly good",
+              "content": "Go 1.27 introduces size-specialized memory-allocation routines for objects smaller than 80 bytes.\n\nThe release notes report that this can reduce the cost of qualifying allocations by as much as 30%. The expected improvement for real, allocation-heavy applications is approximately 1% overall.",
+              "score": 0.9020676,
+              "raw_content": null,
+              "id": "9dad3a-01"
+            }
+          ],
+          "response_time": 0.97,
+          "request_id": "0aa9aa9b-6c5b-42de-bb69-ab5d0cf04bd1",
+          "auth_mode": "keyed"
+        }
+      }
+    }
+  ]
+}

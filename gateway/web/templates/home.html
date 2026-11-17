@@ -1,0 +1,146 @@
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead">{{if zh}}{{.Counts.Tavily}} 个 Tavily key、{{.Counts.Exa}} 个 Exa key，{{.Counts.Egresses}} 个出口节点，{{.Counts.Tokens}} 个令牌。{{else}}{{.Counts.Tavily}} Tavily keys, {{.Counts.Exa}} Exa keys, {{.Counts.Egresses}} egress nodes, {{.Counts.Tokens}} tokens.{{end}}</p>
+  <div class="actions">
+    <div class="seg" aria-label="{{T "时间范围" "Time range"}}">
+      {{range .Ranges}}<a href="{{$.Base}}?range={{.ID}}" aria-current="{{if eq .ID $.Data.Range.ID}}true{{else}}false{{end}}">{{.Label}}</a>{{end}}
+    </div>
+  </div>
+</div>
+
+{{if .EnvPassword}}
+<div class="alert warn">{{icon "triangle-alert"}}<div>{{if zh}}环境变量 <code>WARDEN_ADMIN_PASSWORD</code> 仍然设置着。密码已经保存在 <code>config.yaml</code> 中，建议在"安全"页修改密码后，从 docker-compose / .env 中删除这个变量。{{else}}The environment variable <code>WARDEN_ADMIN_PASSWORD</code> is still set. The password is already stored in <code>config.yaml</code>; change it on the Security page, then remove the variable from docker-compose / .env.{{end}}</div></div>
+{{end}}
+
+<section class="kpis">
+  <div class="card kpi">
+    <span class="kpi-icon">{{icon "activity"}}</span>
+    <div class="kpi-text">
+      <span class="kpi-label">{{T "今日调用" "Requests today"}}</span>
+      <span class="kpi-value">{{num .Today}}</span>
+      <span class="kpi-sub">{{if zh}}7 天 {{num .Week}} · 30 天 {{num .Month}}{{else}}7 d {{num .Week}} · 30 d {{num .Month}}{{end}}</span>
+    </div>
+  </div>
+  <div class="card kpi">
+    <span class="kpi-icon ok">{{icon "circle-check"}}</span>
+    <div class="kpi-text">
+      <span class="kpi-label">{{T "成功率" "Success rate"}} · {{.Range.Label}}</span>
+      <span class="kpi-value">{{if .T.Requests}}{{pct (sub64 .T.Requests .T.Errors) .T.Requests}}{{else}}—{{end}}</span>
+      <span class="kpi-sub">{{if zh}}{{num .T.Requests}} 次请求，{{num .T.Errors}} 次失败{{else}}{{num .T.Requests}} requests, {{num .T.Errors}} failed{{end}}</span>
+    </div>
+  </div>
+  <div class="card kpi">
+    <span class="kpi-icon info">{{icon "timer"}}</span>
+    <div class="kpi-text">
+      <span class="kpi-label">{{T "延迟 p50" "Latency p50"}} · {{.Range.Label}}</span>
+      <span class="kpi-value">{{if .T.Requests}}{{ms .T.P50}}{{else}}—{{end}}</span>
+      <span class="kpi-sub">p95 {{if .T.Requests}}{{ms .T.P95}}{{else}}—{{end}}</span>
+    </div>
+  </div>
+  <div class="card kpi">
+    <span class="kpi-icon warn">{{icon "coins"}}</span>
+    <div class="kpi-text">
+      <span class="kpi-label">{{T "消耗" "Spend"}} · {{.Range.Label}}</span>
+      <span class="kpi-value">{{num .T.Credits}}<span class="unit">Tavily credits</span></span>
+      <span class="kpi-sub">Exa {{usd .T.MicroUSD}}</span>
+    </div>
+  </div>
+</section>
+
+<div class="grid split">
+  <section class="card fill">
+    <div class="card-head">
+      <h2>{{icon "chart-column"}}{{T "调用量趋势" "Request volume"}}</h2>
+      <div class="legend"><span><i class="s-tavily"></i>Tavily</span><span><i class="s-exa"></i>Exa</span><span><i class="s-err"></i>{{T "失败率" "Failure rate"}}</span></div>
+    </div>
+    <div class="card-body">
+      {{if .NoStore}}<p class="empty">{{icon "database"}}<span>{{T "没有连接数据库。" "No database connected."}}</span></p>{{else}}{{.Chart}}{{end}}
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>{{icon "key-round"}}{{T "Key 池" "Key pool"}}</h2>
+      {{if .CanSync}}
+      <form method="post" action="{{$.Base}}quota/sync" class="inline">
+        {{template "csrf" $.CSRF}}
+        <button type="submit" class="ghost small" data-tooltip="{{T "立即同步 Tavily 额度" "Sync Tavily quota now"}}" data-placement="left">{{icon "refresh-cw"}}{{T "同步额度" "Sync quota"}}</button>
+      </form>
+      {{end}}
+    </div>
+    {{range .KeyStats}}
+    <div class="pool">
+      <div class="pool-head">
+        <strong>{{if eq .Provider "tavily"}}Tavily{{else if eq .Provider "exa"}}Exa{{else}}{{.Provider}}{{end}}</strong>
+        <span class="count">{{if zh}}<b>{{.Active}}</b> / {{.Total}} 可用{{else}}<b>{{.Active}}</b> / {{.Total}} active{{end}}</span>
+      </div>
+      {{.Bar}}
+      <div class="legend">{{range .Parts}}<span><i class="dot st-{{.Status}}"></i>{{keyStatus .Status}} {{.N}}</span>{{end}}</div>
+      <p>{{.Quota}}{{if .Forecast}}<br><span class="muted">{{.Forecast}}</span>{{end}}</p>
+    </div>
+    {{else}}
+    <p class="empty">{{icon "key-round"}}<span>{{if zh}}还没有 key。到 <a href="{{$.Base}}keys">Keys</a> 页添加。{{else}}No keys yet. Add some on the <a href="{{$.Base}}keys">Keys</a> page.{{end}}</span></p>
+    {{end}}
+    <div class="statline">
+      <span>{{icon "waypoints"}}{{T "健康的出口" "Healthy egresses"}}</span>
+      <span><i class="dot {{if eq .EgressOK .EgressTotal}}ok{{else if .EgressOK}}warn{{else}}err{{end}}"></i>{{.EgressOK}}/{{.EgressTotal}}</span>
+    </div>
+    <div class="statline">
+      <span>{{icon "file-text"}}{{T "配置文件" "Config files"}}</span>
+      <span>{{if .FilesPending}}<i class="dot err"></i>{{if zh}}{{.FilesPending}} 个未生效{{else}}{{.FilesPending}} not applied{{end}}{{else}}<i class="dot ok"></i>{{T "全部已生效" "All applied"}}{{end}}</span>
+    </div>
+    {{if .SyncErrors}}
+    <div class="card-foot">
+      <p class="err">{{T "以下 key 最近一次额度同步失败：" "The last quota sync failed for:"}}</p>
+      <ul class="errors">{{range .SyncErrors}}<li>{{.Provider}} · {{.Label}}{{T "：" ": "}}{{.Error}}</li>{{end}}</ul>
+    </div>
+    {{end}}
+  </section>
+</div>
+
+<div class="grid two quad">
+  <section class="card"><div class="card-head"><h2>{{icon "zap"}}{{T "工具 Top 10" "Top 10 tools"}}</h2></div>{{template "toprows" .Tools}}</section>
+  <section class="card"><div class="card-head"><h2>{{icon "key-round"}}{{T "Key Top 10" "Top 10 keys"}}</h2></div>{{template "toprows" .Keys}}</section>
+  <section class="card"><div class="card-head"><h2>{{icon "ticket"}}{{T "令牌 Top 10" "Top 10 tokens"}}</h2></div>{{template "toprows" .Tokens}}</section>
+  <section class="card"><div class="card-head"><h2>{{icon "globe"}}{{T "客户端 IP Top 10" "Top 10 client IPs"}}</h2></div>{{template "toprows" .IPs}}</section>
+</div>
+
+<div class="grid two">
+  <section class="card">
+    <div class="card-head">
+      <h2>{{icon "triangle-alert"}}{{T "错误分类" "Errors by kind"}} <span class="meta">{{.Range.Label}}</span></h2>
+      {{if .Errors}}<a href="{{$.Base}}requests?errors=1">{{T "查看失败的请求" "View failed requests"}}</a>{{end}}
+    </div>
+    {{template "toprows" .Errors}}
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>{{icon "file-text"}}{{T "配置文件" "Config files"}}</h2>
+      <a href="{{$.Base}}files">{{T "全部文件" "All files"}}</a>
+    </div>
+    <div class="table-wrap">
+    <table class="compact">
+      <thead><tr><th>{{T "文件" "File"}}</th><th>{{T "状态" "Status"}}</th><th>{{T "版本" "Version"}}</th></tr></thead>
+      <tbody>
+      {{range .Files}}
+        <tr>
+          <td><a href="{{$.Base}}files/edit?f={{.File}}" data-modal="{{$.Base}}files/edit?f={{.File}}"><code>{{.File}}</code></a></td>
+          <td>{{if .Applied}}<span class="badge ok">{{T "已生效" "Applied"}}</span>{{else}}<span class="badge err">{{T "有未生效的修改" "Not applied"}}</span>{{end}}</td>
+          <td><code>{{.Version}}</code></td>
+        </tr>
+        {{if .Errors}}<tr class="detail"><td colspan="3">{{template "fileerrors" .Errors}}</td></tr>{{end}}
+      {{end}}
+      </tbody>
+    </table>
+    </div>
+    <div class="card-foot">{{T "手工修改这些文件后约 1 秒自动生效；写错时继续使用上一份正确的配置，错误显示在这里。" "Edits made by hand apply within about a second; a broken file keeps the last good configuration in effect and its errors show here."}}</div>
+  </section>
+</div>
+
+{{if .CanSync}}
+<p class="hint">{{if zh}}网关会自动用 Tavily 的 GET /usage 同步额度，不消耗 credits。默认最近 2 小时用过的 key 每 15 分钟同步一次，其他 key 每天一次；为遵守官方限速，每个 key、每个出口 IP 至少间隔 65 秒。Exa 没有余额接口，按每次请求的实际费用本地记账。{{else}}The gateway syncs quota with Tavily's GET /usage, which costs no credits. By default keys used in the last 2 hours sync every 15 minutes and the rest once a day; to respect the official rate limit, syncs are at least 65 seconds apart per key and per exit IP. Exa has no balance API, so its spend is tracked locally from each request's actual cost.{{end}}</p>
+{{end}}
+{{end}}
+{{end}}

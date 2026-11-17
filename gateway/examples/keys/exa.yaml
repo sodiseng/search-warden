@@ -1,0 +1,27 @@
+# Exa 上游 key
+#
+# 可以手工编辑，也可以在管理面板修改，两边双向同步。
+# 修改后约 1 秒自动生效；写错时保持原配置运行，并在面板提示出错的行号。
+
+# 本文件内所有 key 的默认值，单个 key 可以覆盖。
+defaults:
+  plan: free          # free | paid
+  egress: direct      # direct（服务器直连）、egresses.yaml 里的节点名，或代理 URL
+  reset_day: 1        # 额度每月重置日（1-28）
+  enabled: true
+
+keys:
+  # 完整写法：
+  # - key: 00000000-0000-0000-0000-000000000000
+  #   label: exa-free-01
+  #   egress: us-res-1                 # 引用节点名
+  # - key: 11111111-1111-1111-1111-111111111111
+  #   label: exa-paid-01
+  #   plan: paid
+  #   budget_monthly: 50               # 付费 key 每月最多花费的美元；0 表示不限制
+  #   team: my-team                    # Exa 的限速按团队计算，同一团队的多个 key 共享 10 QPS：
+  #                                    # 属于同一团队的 key 请写相同的 team；不写表示各算一个团队
+  #   rate_limit: 25                   # 可选：/search 的 QPS 上限（默认 10，团队升级到 25 QPS 时填写）
+  #   weight: 2                        # 可选：同一优先级内按权重比例分配请求（默认 1）。例如 2:1 表示这个 key 承担约 2/3
+  # 简写：只写 key，其余字段都用 defaults
+  # - 22222222-2222-2222-2222-222222222222

@@ -1,0 +1,43 @@
+{{/* Full-page fallback (a direct visit to files/edit?f=…); the panel opens the dialog below. */}}
+{{define "content"}}
+{{with .Data}}
+<div class="page-head">
+  <p class="lead"><code>{{.Name}}</code> · {{T "版本" "version"}} <code>{{.Version}}</code></p>
+  <div class="actions"><a role="button" class="ghost" href="{{$.Base}}files" data-back>{{T "返回文件列表" "Back to the files"}}</a></div>
+</div>
+<section class="card">
+  <div class="card-body form">{{template "filebody" (dict "D" . "P" $ "Page" true)}}</div>
+  <div class="card-foot btn-row">{{template "fileactions" .}}</div>
+</section>
+{{end}}
+{{end}}
+
+{{define "modal"}}
+{{with .Data}}
+{{template "mhead" (dict "Title" .Name "Meta" (T "配置文件" "config file") "Wide" true)}}
+<div class="modal-main">
+  {{template "err" $.Error}}
+  {{template "filebody" (dict "D" . "P" $)}}
+</div>
+<footer>{{template "fileactions" .}}</footer>
+{{end}}
+{{end}}
+
+{{define "filebody"}}
+{{$d := .D}}{{$p := .P}}{{$page := .Page}}
+{{if $d.Status.Errors}}
+<div class="alert err">{{icon "circle-alert"}}<div>{{T "磁盘上的这个文件有错误，网关正在使用上一份正确的版本：" "The file on disk has errors; the gateway is using the last good version:"}}{{template "fileerrors" $d.Status.Errors}}</div></div>
+{{end}}
+<form id="file-form" method="post" action="{{$p.Base}}files/edit?f={{$d.Name}}"{{if not $page}} hx-post="{{$p.Base}}files/edit?f={{$d.Name}}" hx-target="#modal-body" hx-swap="innerHTML"{{end}}>
+  {{template "csrf" $p.CSRF}}
+  <input type="hidden" name="version" value="{{$d.Version}}">
+  <textarea name="content" class="code" rows="24" spellcheck="false" autocomplete="off" wrap="off" aria-label="{{$d.Name}}">{{$d.Content}}</textarea>
+</form>
+<p class="hint">{{if zh}}版本 <code>{{$d.Version}}</code>。保存前文件被别处改过时会拒绝保存，以免覆盖。明文密码和令牌保存后会自动改写成哈希。{{else}}Version <code>{{$d.Version}}</code>. If the file changed elsewhere in the meantime the save is refused rather than overwriting it. Plain-text passwords and tokens are rewritten as hashes after a save.{{end}}</p>
+{{end}}
+
+{{define "fileactions"}}
+<span class="push"></span>
+<button type="button" class="ghost" data-close>{{T "取消" "Cancel"}}</button>
+<button type="submit" form="file-form">{{icon "check"}}{{T "校验并保存" "Validate and save"}}</button>
+{{end}}

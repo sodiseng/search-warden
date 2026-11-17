@@ -1,0 +1,128 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  SRC_DIR: gateway   # the Go module directory
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    services:
+      postgres:   # enables the PostgreSQL leg of internal/store tests
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: warden
+          POSTGRES_PASSWORD: warden
+          POSTGRES_DB: warden_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U warden -d warden_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: ${{ env.SRC_DIR }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          # Pinned: govulncheck must see a standard library without known vulnerabilities
+          # (go1.27.0 in go.mod would let the runner pick any 1.27.x).
+          go-version: '1.27.4'
+          check-latest: true
+          cache-dependency-path: ${{ env.SRC_DIR }}/go.*
+      - name: gofmt
+        run: test -z "$(gofmt -l . | tee /dev/stderr)"
+      - name: vet
+        run: go vet ./...
+      - name: test (race, SQLite + PostgreSQL)
+        env:
+          WARDEN_TEST_PG_DSN: postgres://warden:warden@127.0.0.1:5432/warden_test?sslmode=disable
+        run: go test -race -count=1 ./...
+      - name: staticcheck
+        run: go run honnef.co/go/tools/cmd/staticcheck@latest ./...
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  image:
+    needs: go
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compute version
+        id: v
+        run: |
+          echo "version=${GITHUB_REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          build-args: |
+            SRC_DIR=${{ env.SRC_DIR }}
+            VERSION=${{ steps.v.outputs.version }}
+            COMMIT=${{ github.sha }}
+            DATE=${{ steps.v.outputs.date }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/search-warden:${{ github.ref_type == 'tag' && github.ref_name || 'edge' }}
+            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}/search-warden:latest', github.repository_owner) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test (amd64)
+        if: github.event_name == 'pull_request' || github.ref_type == 'branch' || github.ref_type == 'tag'
+        run: |
+          docker buildx build --build-arg SRC_DIR=${{ env.SRC_DIR }} --load -t warden:smoke .
+          # The gateway refuses to start without an admin password (there is no open setup page).
+          docker run -d --name smoke -p 18080:18683 -e WARDEN_ADMIN_PASSWORD=ci-smoke-password-0000 warden:smoke
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18080/healthz; then ok=1; break; fi
+            sleep 1
+          done
+          docker inspect --format '{{.State.Status}} health={{.State.Health.Status}} user={{.Config.User}}' smoke
+          if [ "$ok" != 1 ]; then docker logs smoke; exit 1; fi
+          test "$(docker inspect --format '{{.Config.User}}' smoke)" = "65532:65532"
+          docker rm -f smoke
+      - name: Compose smoke test (.env.example as shipped)
+        if: github.event_name == 'pull_request' || github.ref_type == 'branch' || github.ref_type == 'tag'
+        run: |
+          cp .env.example .env
+          sed -i -e 's|^WARDEN_ADMIN_PASSWORD=.*|WARDEN_ADMIN_PASSWORD=ci-smoke-password-0000|' .env
+          # Run the image built above instead of pulling the published one.
+          echo 'WARDEN_IMAGE=warden' >> .env
+          echo 'WARDEN_VERSION=smoke' >> .env
+          mkdir -p data && sudo chown -R 65532:65532 data
+          docker compose up -d
+          ok=0
+          for i in $(seq 1 30); do
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q warden)")" = healthy ]; then ok=1; break; fi
+            sleep 2
+          done
+          docker compose ps
+          if [ "$ok" != 1 ]; then docker compose logs warden; exit 1; fi
+          curl -fsS http://127.0.0.1:18683/healthz
+          # The panel answers under /admin/ and the bare domain gives nothing away.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18683/admin/login)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18683/)" = 403
+          docker compose down

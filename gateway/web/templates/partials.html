@@ -1,0 +1,116 @@
+{{/* Blocks shared by several pages. */}}
+
+{{define "csrf"}}<input type="hidden" name="csrf" value="{{.}}">{{end}}
+
+{{define "keystatus"}}<span class="badge st-{{.Status}}">{{keyStatus .Status}}</span>{{end}}
+
+{{define "health"}}<span class="badge h-{{.}}">{{health .}}</span>{{end}}
+
+{{/* err: an error message inside a dialog or card (pass the message). */}}
+{{define "err"}}{{with .}}<div class="alert err" role="alert">{{icon "circle-alert"}}<div>{{.}}</div></div>{{end}}{{end}}
+
+{{/* mhead: the header of the shared dialog. .Title, optional .Meta, .Wide for the large size. */}}
+{{define "mhead"}}<header{{if .Wide}} data-wide{{end}}><h2>{{.Title}}{{if .Meta}}<span class="meta">{{.Meta}}</span>{{end}}</h2><button type="button" class="icon-btn" data-close aria-label="{{T "关闭" "Close"}}">{{icon "x"}}</button></header>{{end}}
+
+{{/* fileerrors: a confstore.Errors list, each with its line. */}}
+{{define "fileerrors"}}<ul class="errors">{{range .}}<li>{{if .Line}}{{if zh}}第 {{.Line}} 行：{{else}}Line {{.Line}}: {{end}}{{end}}{{.Msg}}</li>{{end}}</ul>{{end}}
+
+{{/* quota: a pool.View */}}
+{{define "quota"}}
+  {{if and .Limit .Remaining}}<progress class="bar {{bar .}}" value="{{deref .Remaining}}" max="{{deref .Limit}}"></progress>{{end}}
+  <span class="quota">{{quota .}}</span>{{if .UpstreamPlan}} <span class="muted small">· {{.UpstreamPlan}}</span>{{end}}
+{{end}}
+
+{{/* egresspicker: .Options []option, .Current string */}}
+{{define "egresspicker"}}
+<div class="fields">
+  <label class="field"><span class="field-label">{{T "出口" "Egress"}}</span>
+    <select name="egress">
+      {{range .Options}}<option value="{{.Value}}"{{if eq .Value $.Current}} selected{{end}}>{{.Label}}</option>{{end}}
+    </select>
+  </label>
+  <label class="field"><span class="field-label">{{T "或粘贴代理 URL" "Or paste a proxy URL"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+    <input type="text" name="egress_url" autocomplete="off" spellcheck="false" placeholder="socks5://user:pass@1.2.3.4:1080">
+  </label>
+</div>
+{{end}}
+
+{{/* toprows: a ranked list ([]topRow) with each row's share of the largest. */}}
+{{define "toprows"}}
+  {{if .}}
+  <ol class="toplist">
+    {{range .}}
+    <li>
+      <span class="name">{{if .Link}}<a href="{{.Link}}"{{if .Dialog}} data-modal="{{.Link}}"{{end}}>{{.Label}}</a>{{else}}{{.Label}}{{end}}</span>
+      <span class="meta">{{if .Errors}}<span class="err">{{T "失败" "failed"}} {{pct .Errors .Requests}}</span>{{end}}{{if .Cost}}<span>{{.Cost}}</span>{{end}}<b>{{num .Requests}}</b></span>
+      <progress class="share" value="{{.Requests}}" max="{{.Max}}"></progress>
+    </li>
+    {{end}}
+  </ol>
+  {{else}}<p class="empty">{{icon "inbox"}}<span>{{T "没有数据" "No data"}}</span></p>{{end}}
+{{end}}
+
+{{define "limits"}}{{if or .RPM .Concurrency .DailyRequests .MonthlyRequests .MonthlyCredits .MonthlyUSD}}{{if zh}}{{if .RPM}}{{.RPM}}/分钟 {{end}}{{if .Concurrency}}并发 {{.Concurrency}} {{end}}{{if .DailyRequests}}每天 {{num .DailyRequests}} 次 {{end}}{{if .MonthlyRequests}}每月 {{num .MonthlyRequests}} 次 {{end}}{{if .MonthlyCredits}}每月 {{num .MonthlyCredits}} credits {{end}}{{if .MonthlyUSD}}每月 ${{.MonthlyUSD}}{{end}}{{else}}{{if .RPM}}{{.RPM}}/min {{end}}{{if .Concurrency}}{{.Concurrency}} concurrent {{end}}{{if .DailyRequests}}{{num .DailyRequests}}/day {{end}}{{if .MonthlyRequests}}{{num .MonthlyRequests}}/month {{end}}{{if .MonthlyCredits}}{{num .MonthlyCredits}} credits/month {{end}}{{if .MonthlyUSD}}${{.MonthlyUSD}}/month{{end}}{{end}}{{else}}<span class="muted">{{T "不限" "Unlimited"}}</span>{{end}}{{end}}
+
+{{/* tokenform: the fields shared by "create token" and "edit token" (a tokenForm). */}}
+{{define "tokenform"}}
+<label class="field"><span class="field-label">{{T "名称" "Name"}}</span>
+  <input type="text" name="name" value="{{.Spec.Name}}" maxlength="64" required placeholder="claude-laptop">
+</label>
+<div class="fields three">
+  <div class="group">
+    <span class="group-title">{{T "服务" "Services"}}</span>
+    <div class="checks">
+      <label class="choice"><input type="checkbox" name="providers" value="tavily"{{if or (not .Spec.Providers) (has .Spec.Providers "tavily")}} checked{{end}}>Tavily</label>
+      <label class="choice"><input type="checkbox" name="providers" value="exa"{{if or (not .Spec.Providers) (has .Spec.Providers "exa")}} checked{{end}}>Exa</label>
+    </div>
+  </div>
+  <div class="group">
+    <span class="group-title">{{T "入口" "Entry points"}}</span>
+    <div class="checks">
+      <label class="choice"><input type="checkbox" name="surfaces" value="mcp"{{if or (not .Spec.Surfaces) (has .Spec.Surfaces "mcp")}} checked{{end}}>MCP</label>
+      <label class="choice"><input type="checkbox" name="surfaces" value="rest"{{if or (not .Spec.Surfaces) (has .Spec.Surfaces "rest")}} checked{{end}}>REST</label>
+    </div>
+  </div>
+  <div class="group">
+    <span class="group-title">{{T "可用的上游 key" "Upstream keys"}}</span>
+    <div class="checks">
+      <label class="choice"><input type="radio" name="key_group" value="all"{{if or (eq .Spec.KeyGroup "") (eq .Spec.KeyGroup "all")}} checked{{end}}>{{T "全部" "All"}}</label>
+      <label class="choice"><input type="radio" name="key_group" value="free"{{if eq .Spec.KeyGroup "free"}} checked{{end}}>{{T "只用免费" "Free only"}}</label>
+      <label class="choice"><input type="radio" name="key_group" value="paid"{{if eq .Spec.KeyGroup "paid"}} checked{{end}}>{{T "只用付费" "Paid only"}}</label>
+    </div>
+  </div>
+</div>
+<label class="field"><span class="field-label">{{T "允许的工具" "Allowed tools"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+  <input type="text" name="tools" value="{{.ToolsText}}" spellcheck="false" placeholder="{{T "留空表示全部" "Blank = all tools"}}">
+  <small>{{T "逗号分隔，可选：" "Comma-separated; available: "}}{{join .AllTools ", "}}</small>
+</label>
+<div class="fields">
+  <label class="field"><span class="field-label">{{T "IP 白名单" "IP allowlist"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+    <input type="text" name="ip_allowlist" value="{{.IPText}}" spellcheck="false" placeholder="203.0.113.0/24, 198.51.100.7">
+    <small>{{T "留空不限制" "Blank = any address"}}</small>
+  </label>
+  <label class="field"><span class="field-label">{{T "过期时间" "Expires"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+    <input type="text" name="expires" value="{{.Spec.Expires}}" placeholder="2027-01-01">
+    <small>{{T "留空不过期" "Blank = never"}}</small>
+  </label>
+</div>
+<p class="section-title">{{T "限额" "Limits"}}</p>
+<div class="fields three">
+  <label class="field"><span class="field-label">{{T "每分钟请求" "Requests per minute"}}</span><input type="number" name="limit_rpm" value="{{index .Limits "rpm"}}" min="0" placeholder="{{T "不限" "unlimited"}}"></label>
+  <label class="field"><span class="field-label">{{T "并发" "Concurrent requests"}}</span><input type="number" name="limit_concurrency" value="{{index .Limits "concurrency"}}" min="0" placeholder="{{T "不限" "unlimited"}}"></label>
+  <label class="field"><span class="field-label">{{T "每天请求" "Requests per day"}}</span><input type="number" name="limit_daily_requests" value="{{index .Limits "daily_requests"}}" min="0" placeholder="{{T "不限" "unlimited"}}"></label>
+  <label class="field"><span class="field-label">{{T "每月请求" "Requests per month"}}</span><input type="number" name="limit_monthly_requests" value="{{index .Limits "monthly_requests"}}" min="0" placeholder="{{T "不限" "unlimited"}}"></label>
+  <label class="field"><span class="field-label">{{T "每月 Tavily credits" "Tavily credits per month"}}</span><input type="number" name="limit_monthly_credits" value="{{index .Limits "monthly_credits"}}" min="0" placeholder="{{T "不限" "unlimited"}}"></label>
+  <label class="field"><span class="field-label">{{T "每月 Exa 美元" "Exa USD per month"}}</span><input type="number" name="limit_monthly_usd" value="{{index .Limits "monthly_usd"}}" min="0" step="any" placeholder="{{T "不限" "unlimited"}}"></label>
+</div>
+<p class="hint">{{if zh}}0 或留空表示不限制。超过任一限额时请求返回 429（MCP 返回错误结果），并告诉调用方多久后重试。每天、每月按 UTC 自然日、自然月计算；花费上限在请求结束后按实际费用累计，所以最后一个请求可能略超出。轮换令牌会重新开始计数。{{else}}0 or blank means unlimited. Above any limit a request gets 429 (an error result over MCP) and is told when to retry. Days and months are UTC calendar days and months; spend is added after a request finishes, from its actual cost, so the last request may go slightly over. Rotating the token restarts the counters.{{end}}</p>
+<div class="fields">
+  <label class="field"><span class="field-label">{{T "备注" "Note"}} <span class="opt">{{T "可选" "optional"}}</span></span>
+    <input type="text" name="note" value="{{.Spec.Note}}">
+  </label>
+  <div class="field"><span class="field-label">{{T "状态" "Status"}}</span>
+    <label class="choice"><input type="checkbox" role="switch" name="enabled"{{if .Spec.Enabled}} checked{{end}}>{{T "启用" "Enabled"}}</label>
+  </div>
+</div>
+{{end}}

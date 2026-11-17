@@ -1,0 +1,47 @@
+{{/* Full-page fallback (a direct visit to requests/<id>); the list opens the dialog below. */}}
+{{define "content"}}
+<div class="page-head">
+  <p class="lead">#{{.Data.Row.ID}} · <code>{{.Data.Row.RequestID}}</code></p>
+  <div class="actions"><a role="button" class="ghost" href="{{.Base}}requests" data-back>{{T "返回列表" "Back to the list"}}</a></div>
+</div>
+<section class="card"><div class="card-body form">{{template "requestbody" .}}</div></section>
+{{end}}
+
+{{define "modal"}}
+{{template "mhead" (dict "Title" (T "请求详情" "Request details") "Meta" .Data.Row.RequestID "Wide" true)}}
+<div class="modal-main">{{template "requestbody" .}}</div>
+<footer><span class="push"></span><button type="button" class="ghost" data-close>{{T "关闭" "Close"}}</button></footer>
+{{end}}
+
+{{define "requestbody"}}
+{{with .Data}}{{with .Row}}
+<dl class="kv facts">
+  <dt>{{T "时间" "Time"}}</dt><dd>{{dt .TS}}</dd>
+  <dt>{{T "请求 ID" "Request ID"}}</dt><dd><code>{{.RequestID}}</code></dd>
+  <dt>{{T "操作" "Operation"}}</dt><dd>{{.Provider}} / {{.Operation}} <span class="badge plain">{{.Surface}}</span></dd>
+  <dt>{{T "令牌" "Token"}}</dt><dd>{{if .TokenName}}<a href="{{$.Base}}tokens/{{.TokenID}}" data-modal="{{$.Base}}tokens/{{.TokenID}}">{{.TokenName}}</a>{{else}}—{{end}}</dd>
+  <dt>{{T "客户端" "Client"}}</dt><dd>{{.ClientIP}} <span class="muted small">{{if zh}}（来自 {{.IPSource}}）{{else}}(from {{.IPSource}}){{end}}</span>{{if .UserAgent}}<span class="cell-sub">{{.UserAgent}}</span>{{end}}</dd>
+  <dt>Key</dt><dd>{{if .KeyLabel}}<a href="{{$.Base}}keys/{{.KeyID}}" data-modal="{{$.Base}}keys/{{.KeyID}}">{{.KeyLabel}}</a>{{else}}—{{end}}</dd>
+  <dt>{{T "出口" "Egress"}}</dt><dd>{{.EgressLabel}}{{if .ExitIP}} · {{T "出口 IP" "exit IP"}} {{.ExitIP}}{{end}}</dd>
+  <dt>{{T "结果" "Result"}}</dt><dd><span class="badge plain {{if .Error}}err{{else}}ok{{end}}">{{.Status}}</span> {{.Outcome}}{{if .ErrorKind}} · <span class="err">{{.ErrorKind}}</span>{{end}}</dd>
+  <dt>{{T "耗时" "Time taken"}}</dt><dd>{{if zh}}{{ms .LatencyMS}}（其中上游 {{ms .UpstreamLatencyMS}}）· 尝试 {{.Attempts}} 次{{else}}{{ms .LatencyMS}} ({{ms .UpstreamLatencyMS}} upstream) · {{.Attempts}} attempts{{end}}</dd>
+  <dt>{{T "费用" "Cost"}}</dt><dd>{{if .CostCredits}}{{num .CostCredits}} credits {{end}}{{if .CostMicroUSD}}{{usd .CostMicroUSD}} {{end}}{{if .CostEstimated}}<span class="muted">{{T "（估算）" "(estimated)"}}</span>{{end}}{{if and (not .CostCredits) (not .CostMicroUSD)}}0{{end}}</dd>
+  <dt>{{T "大小" "Size"}}</dt><dd>{{if zh}}请求 {{num .ReqBytes}} 字节 · 响应 {{num .RespBytes}} 字节{{else}}request {{num .ReqBytes}} bytes · response {{num .RespBytes}} bytes{{end}}</dd>
+  <dt>{{T "内容预览" "Query preview"}}</dt><dd>{{if .QueryPreview}}{{.QueryPreview}}{{else}}<span class="muted">{{T "（未记录）" "(not recorded)"}}</span>{{end}}</dd>
+</dl>
+{{end}}
+<p class="section-title">{{T "尝试记录" "Attempts"}}</p>
+{{if .Attempts}}
+<div class="table-wrap card">
+<table class="compact">
+  <thead><tr><th>#</th><th>{{T "时间" "Time"}}</th><th>Key</th><th>{{T "出口" "Egress"}}</th><th>{{T "状态" "Status"}}</th><th>{{T "错误" "Error"}}</th><th class="num">{{T "耗时" "Time taken"}}</th></tr></thead>
+  <tbody>
+  {{range .Attempts}}
+    <tr><td>{{.N}}</td><td class="nowrap">{{dt .TS}}</td><td>{{.KeyLabel}}</td><td>{{.EgressLabel}}</td><td>{{if .Status}}{{.Status}}{{else}}—{{end}}</td><td class="err">{{.ErrorKind}}</td><td class="num">{{ms .LatencyMS}}</td></tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{else}}<p class="hint">{{T "只尝试了一次，没有单独的尝试记录（只有换过 key 重试的请求才保存每次尝试）。" "There was a single attempt, so no separate records (attempts are only kept for requests that were retried on another key)."}}</p>{{end}}
+{{end}}
+{{end}}

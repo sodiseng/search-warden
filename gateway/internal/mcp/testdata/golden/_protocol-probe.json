@@ -1,0 +1,93 @@
+{
+  "tavily_discover": {
+    "status": "HTTP/1.1 200 OK",
+    "content_type": "application/json",
+    "body": "{\"jsonrpc\":\"2.0\",\"id\":7,\"result\":{\"_meta\":{\"io.modelcontextprotocol/serverInfo\":{\"name\":\"tavily-mcp\",\"version\":\"4.1.5\"}},\"ttlMs\":0,\"cacheScope\":\"private\",\"supportedVersions\":[\"2026-07-28\"],\"capabilities\":{\"logging\":{},\"prompts\":{\"listChanged\":false},\"resources\":{\"subscribe\":false,\"listChanged\":false},\"tools\":{\"listChanged\":false},\"extensions\":{\"io.modelcontextprotocol/ui\":{}}},\"instructions\":\"Researching with Tavily: when a result names a likely answer, read its page with tavily_extract to confirm it before searching more, and name the candidate in your next query when testing it. Keep your best candidate until a source contradicts it; if none confirms it, also search the main alternative by name. Once new searches stop adding evidence, answer with the best-supported candidate, from sources rather than memory, and say what you could not confirm.\",\"resultType\":\"complete\"}}"
+  },
+  "tavily_initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "protocolVersion": "2025-11-25",
+      "capabilities": {
+        "logging": {},
+        "prompts": {
+          "listChanged": true
+        },
+        "resources": {
+          "subscribe": false,
+          "listChanged": true
+        },
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "serverInfo": {
+        "name": "tavily-mcp",
+        "version": "4.1.5"
+      },
+      "instructions": "Researching with Tavily: when a result names a likely answer, read its page with tavily_extract to confirm it before searching more, and name the candidate in your next query when testing it. Keep your best candidate until a source contradicts it; if none confirms it, also search the main alternative by name. Once new searches stop adding evidence, answer with the best-supported candidate, from sources rather than memory, and say what you could not confirm."
+    }
+  },
+  "tavily_ping": "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":8,\"result\":{}}\r\n\r\n",
+  "tavily_unknown_tool": {
+    "status": "HTTP/1.1 200 OK",
+    "body": "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":9,\"error\":{\"code\":-32001,\"message\":\"Not found: Unknown tool: 'no_such_tool'\"}}\r\n\r\n"
+  },
+  "tavily_resources_list": "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":10,\"result\":{\"resources\":[]}}\r\n\r\n",
+  "tavily_prompts_list": "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":11,\"result\":{\"prompts\":[]}}\r\n\r\n",
+  "exa_discover": {
+    "status": "HTTP/1.1 400 Bad Request",
+    "content_type": "application/json",
+    "body": "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32000,\"message\":\"Bad Request: Unsupported protocol version: 2026-07-28 (supported versions: 2025-11-25, 2025-06-18, 2025-03-26, 2024-11-05, 2024-10-07)\"},\"id\":null}"
+  },
+  "exa_initialize": {
+    "result": {
+      "protocolVersion": "2025-11-25",
+      "capabilities": {
+        "tools": {
+          "listChanged": true
+        },
+        "prompts": {
+          "listChanged": true
+        },
+        "resources": {
+          "listChanged": true
+        }
+      },
+      "serverInfo": {
+        "name": "exa-search-server",
+        "title": "Exa",
+        "version": "3.5.0",
+        "description": "Exa web search, page fetching and research-agent tools for AI agents over MCP.",
+        "websiteUrl": "https://exa.ai",
+        "icons": [
+          {
+            "src": "https://exa.ai/images/logo/exa-logomark-blue.svg",
+            "mimeType": "image/svg+xml",
+            "sizes": [
+              "any"
+            ]
+          },
+          {
+            "src": "https://exa.ai/images/favicon-32x32.png",
+            "mimeType": "image/png",
+            "sizes": [
+              "32x32"
+            ]
+          }
+        ]
+      },
+      "instructions": "Only use tools returned by tools/list. If web_search_exa is listed, use it to find relevant pages and current information by describing the page you want to find. If web_fetch_exa is listed, use it to read known URLs when search highlights are insufficient or you already have a URL. If agent_run is listed, use it for multi-step research, list-building, or enrichment. If a run is still running, continue with its runId rather than starting a duplicate run."
+    },
+    "jsonrpc": "2.0",
+    "id": 1
+  },
+  "exa_ping": "event: message\ndata: {\"result\":{},\"jsonrpc\":\"2.0\",\"id\":8}\n\n",
+  "exa_unknown_tool": {
+    "status": "HTTP/1.1 200 OK",
+    "body": "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32602,\"message\":\"Unknown tool: no_such_tool\",\"data\":{\"availableTools\":[\"web_search_exa\",\"web_search_advanced_exa\",\"web_fetch_exa\",\"agent_run\"]}},\"id\":9}"
+  },
+  "exa_resources_list": "event: message\ndata: {\"result\":{\"resources\":[{\"uri\":\"exa://tools/list\",\"name\":\"tools_list\",\"mimeType\":\"application/json\",\"description\":\"List of available Exa tools and their descriptions\"},{\"uri\":\"exa://agent/skill\",\"name\":\"agent_research_guide\",\"mimeType\":\"text/markdown\",\"description\":\"Exa Agent research workflow, schema rules, and coverage guidance\"},{\"uri\":\"exa://agent/schema-templates\",\"name\":\"agent_schema_templates\",\"mimeType\":\"application/json\",\"description\":\"Starter JSON Schema templates for common Agent workflows\"}]},\"jsonrpc\":\"2.0\",\"id\":10}\n\n",
+  "exa_prompts_list": "event: message\ndata: {\"result\":{\"prompts\":[{\"name\":\"web_search_help\",\"description\":\"Get help with web search using Exa\",\"arguments\":[]},{\"name\":\"agent_research_help\",\"description\":\"Get help structuring a multi-step Exa Agent research run.\",\"arguments\":[{\"name\":\"task\",\"description\":\"The research task to turn into an Exa Agent run\",\"required\":false}]}]},\"jsonrpc\":\"2.0\",\"id\":11}\n\n"
+}

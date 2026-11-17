@@ -1,0 +1,23 @@
+{{define "content"}}
+<section class="card center login-card">
+  <h1>{{T "登录管理面板" "Sign in to the panel"}}</h1>
+  <p class="lead">{{T "管理 Tavily 与 Exa 的 key、出口和令牌。" "Manage the Tavily and Exa keys, egresses and tokens."}}</p>
+  <form method="post" action="{{.Base}}login" class="form">
+    <input type="hidden" name="next" value="{{.Next}}">
+    <label class="field"><span class="field-label">{{T "用户名" "Username"}}</span>
+      <input name="username" autocomplete="username" required autofocus>
+    </label>
+    <label class="field"><span class="field-label">{{T "密码" "Password"}}</span>
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    {{if .TOTP}}
+    <label class="field"><span class="field-label">{{T "两步验证码" "Two-step code"}}</span>
+      <input name="totp" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required>
+    </label>
+    {{end}}
+    {{if .Error}}<div class="alert err" role="alert">{{icon "circle-alert"}}<div>{{.Error}}</div></div>{{end}}
+    <button type="submit">{{T "登录" "Sign in"}}</button>
+  </form>
+  <p class="hint">{{if zh}}忘记密码：在数据目录的 <code>config.yaml</code> 中 admin 下面写一行 <code>password: 新密码</code>，保存后自动生效。{{else}}Forgot the password? Under admin in the data directory's <code>config.yaml</code>, add a line <code>password: new-password</code>; it applies when the file is saved.{{end}}</p>
+</section>
+{{end}}

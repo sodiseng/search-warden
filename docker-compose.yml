@@ -1,0 +1,117 @@
+# search-warden: Docker Compose
+#
+# Quick start, in this directory:
+#   cp .env.example .env                              # set WARDEN_ADMIN_PASSWORD (12+ characters)
+#   mkdir -p data && sudo chown -R 65532:65532 data   # the container runs as uid 65532
+#   docker compose up -d --build
+#   open http://127.0.0.1:18683/admin/                # log in as "admin"
+#
+# Values come from .env. In each ${...} below, the part after ":-" is the default,
+# used when .env does not set that name, so an almost empty .env is enough.
+#
+# The default database is SQLite and needs nothing else. Everything marked
+# [optional] is off, or at its default, until you change it in .env.
+
+services:
+  warden:
+    # The image to run. `--build` builds it from this repository under the same name.
+    image: ${WARDEN_IMAGE:-ghcr.io/sodiseng/search-warden}:${WARDEN_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+
+    # The image runs as uid 65532. Set WARDEN_UID / WARDEN_GID to your own
+    # `id -u` / `id -g` to edit the files in ./data without sudo.
+    user: "${WARDEN_UID:-65532}:${WARDEN_GID:-65532}"
+
+    # Hardening: read-only root filesystem, no capabilities, no privilege escalation.
+    # Only /data (the volume below) and /tmp are writable.
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+    ports:
+      # One port serves the API, the MCP endpoints and the admin panel (/admin/).
+      # Behind a reverse proxy on the same host, set WARDEN_GATEWAY_BIND=127.0.0.1
+      # so the port is not reachable from outside.
+      - "${WARDEN_GATEWAY_BIND:-0.0.0.0}:${WARDEN_GATEWAY_PORT:-18683}:18683"
+      # [optional] A separate port for the admin panel. Set WARDEN_ADMIN_LISTEN=:18684
+      # in .env and remove the "# " below.
+      # - "${WARDEN_ADMIN_BIND:-127.0.0.1}:${WARDEN_ADMIN_PORT:-18684}:18684"
+
+    environment:
+      # ---- Required --------------------------------------------------------------
+      # Password of the panel user "admin", at least 12 characters. It is read only
+      # while data/config.yaml has no admin password yet (normally: the first start),
+      # stored as an argon2id hash, and can then be removed from .env.
+      WARDEN_ADMIN_PASSWORD: ${WARDEN_ADMIN_PASSWORD:-}
+
+      # ---- Fixed inside the container: change the host side above instead ---------
+      WARDEN_LISTEN: ":18683"
+      WARDEN_DATA_DIR: /data
+
+      # ---- Database ----------------------------------------------------------------
+      # SQLite files in ./data/db (default), or PostgreSQL: see the postgres service.
+      WARDEN_DB: ${WARDEN_DB:-sqlite:///data/db}
+
+      # ---- [optional] Admin panel --------------------------------------------------
+      # "shared" puts the panel on the gateway port under WARDEN_ADMIN_BASE_PATH.
+      # ":18684" gives it its own port (also publish that port above).
+      WARDEN_ADMIN_LISTEN: ${WARDEN_ADMIN_LISTEN:-shared}
+      # Where the panel is mounted. It must not be "/" while WARDEN_ADMIN_LISTEN=shared.
+      WARDEN_ADMIN_BASE_PATH: ${WARDEN_ADMIN_BASE_PATH:-/admin/}
+
+      # ---- [optional] Behind a reverse proxy ---------------------------------------
+      # Public address of the gateway, e.g. https://gw.example.com. Only used to fill
+      # in the client configuration examples the panel shows.
+      WARDEN_PUBLIC_URL: ${WARDEN_PUBLIC_URL:-}
+      # Public address of the panel, e.g. https://gw.example.com. Logins and changes
+      # are accepted only from this origin; empty = the address in the request.
+      WARDEN_ADMIN_PUBLIC_URL: ${WARDEN_ADMIN_PUBLIC_URL:-}
+      # "true" when the panel is reached over HTTPS: marks the session cookie Secure
+      # and sends HSTS. Leave "false" on plain HTTP, or logging in will not work.
+      WARDEN_COOKIE_SECURE: ${WARDEN_COOKIE_SECURE:-false}
+
+      # ---- [optional] Metrics and logging ------------------------------------------
+      # Enables GET /metrics (Prometheus) with `Authorization: Bearer <token>`.
+      # At least 16 characters; empty = disabled.
+      WARDEN_METRICS_TOKEN: ${WARDEN_METRICS_TOKEN:-}
+      # debug | info | warn | error
+      WARDEN_LOG_LEVEL: ${WARDEN_LOG_LEVEL:-info}
+      # json | text
+      WARDEN_LOG_FORMAT: ${WARDEN_LOG_FORMAT:-json}
+
+    volumes:
+      # All state: config.yaml, keys/*.yaml (plaintext upstream keys), tokens.yaml and
+      # the SQLite files. Edit the YAML files by hand or in the panel; they sync both ways.
+      - ./data:/data
+
+    # The health check is built into the image: `warden healthcheck` probes /healthz.
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false   # only applies when the postgres profile is enabled
+
+  # [optional] PostgreSQL instead of SQLite. Not started by default.
+  #   1. In .env set:  PG_PASSWORD=<a password>
+  #                    WARDEN_DB=postgres://warden:<the same password>@postgres:5432/warden?sslmode=disable
+  #   2. Start with:   docker compose --profile postgres up -d --build
+  postgres:
+    profiles: [postgres]
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: warden
+      # Not published to the host; change it anyway.
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-change-me}
+      POSTGRES_DB: warden
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warden -d warden"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
